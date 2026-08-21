@@ -60,6 +60,20 @@ function VideoSettings({ video, busy, qualityMode, setQualityMode }: VideoSettin
           <option value="prores">{t('ProRes 422 HQ 母带 (.mov)')}</option>
         </select>
       </Row>
+      {video.codec === 'h264' && (
+        <Row label={t('视频编码器')}>
+          <select
+            className="cc-export-select"
+            value={video.h264EncoderPreference}
+            onChange={(event) => video.setH264EncoderPreference(event.target.value as typeof video.h264EncoderPreference)}
+            disabled={busy}
+          >
+            <option value="auto">{t('自动选择')}</option>
+            <option value="h264_nvenc">NVIDIA NVENC</option>
+            <option value="libx264">{t('CPU · libx264')}</option>
+          </select>
+        </Row>
+      )}
       {video.codec === 'prores' && (
         <p className="cc-export-footnote">
           {t('ProRes 母带体积较大，仅本机渲染；适合调色或交给达芬奇继续剪。网发请用 H.264。')}

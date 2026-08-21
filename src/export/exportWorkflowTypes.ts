@@ -8,6 +8,7 @@ import type { ExportFailure } from './exportFailure';
 export type ExportTab = 'video' | 'audio' | 'mg' | 'subtitles' | 'xml';
 export type ExportPhase = 'queued' | 'preparing' | 'rendering' | 'finalizing' | 'verifying' | 'downloading' | 'completed' | 'failed' | 'cancelled';
 export type RenderEngine = 'idle' | 'checking' | 'browser' | 'server';
+export type H264EncoderPreference = 'auto' | 'h264_nvenc' | 'libx264';
 export type Translate = (zh: string, params?: Record<string, string | number>) => string;
 export type StateSetter<Value> = Dispatch<SetStateAction<Value>>;
 export interface ExportEngineInfo {
@@ -72,6 +73,7 @@ export interface UseExportWorkflowOptions {
   base: string;
   tab: ExportTab;
   codec: 'h264' | 'vp8' | 'prores';
+  h264EncoderPreference?: H264EncoderPreference;
   resolution: ExportResolution;
   fps: number;
   requestedVideoBitrate?: number;

@@ -2,42 +2,43 @@
 setlocal
 cd /d "%~dp0"
 
-set "KC_NODE=C:\Users\kaina\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
-set "KC_NPM=C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js"
+where node.exe >nul 2>nul
+if errorlevel 1 goto :missing_node
 
-if not exist "%KC_NODE%" (
-  echo O runtime Node.js 24 do Kaka Cut nao foi encontrado.
-  echo Consulte README_EDITOR_DOCUMENTAL.md.
-  pause
-  exit /b 1
-)
+where npm.cmd >nul 2>nul
+if errorlevel 1 goto :missing_npm
 
-if not exist "%KC_NPM%" (
-  echo O npm nao foi encontrado em %KC_NPM%.
-  pause
-  exit /b 1
-)
-
-set "PATH=C:\Users\kaina\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;%PATH%"
+for /f "delims=" %%V in ('node -p "process.versions.node.split('.')[0]"') do set "KC_NODE_MAJOR=%%V"
+if not "%KC_NODE_MAJOR%"=="24" goto :wrong_node
 
 if not exist "node_modules\electron\dist\electron.exe" (
   echo Instalando dependencias do Kaka Cut...
-  "%KC_NODE%" "%KC_NPM%" install
+  call npm install
   if errorlevel 1 goto :error
 )
 
-if not exist "dist\index.html" (
-  echo Preparando a interface do Kaka Cut...
-  "%KC_NODE%" "%KC_NPM%" run build
-  if errorlevel 1 goto :error
-)
+echo Preparando a versao mais recente do Kaka Cut...
+call npm run build
+if errorlevel 1 goto :error
 
-"%KC_NODE%" "%KC_NPM%" run desktop:dev:shared
+echo Abrindo o Kaka Cut...
+call npm run desktop:dev:shared
 exit /b %errorlevel%
+
+:missing_node
+echo Node.js nao foi encontrado. Instale o Node.js 24 e tente novamente.
+exit /b 1
+
+:missing_npm
+echo npm nao foi encontrado. Reinstale o Node.js 24 e tente novamente.
+exit /b 1
+
+:wrong_node
+echo O Kaka Cut requer Node.js 24. Versao encontrada: %KC_NODE_MAJOR%.
+exit /b 1
 
 :error
 echo.
 echo Nao foi possivel iniciar o Kaka Cut.
-echo Consulte README_EDITOR_DOCUMENTAL.md.
-pause
+echo Consulte o arquivo KAKA_CUT_INICIO.log para ver o erro.
 exit /b 1

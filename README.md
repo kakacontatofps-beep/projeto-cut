@@ -21,8 +21,12 @@ O Kaka Cut combina uma timeline multifaixa com montagem automática de episódio
 
 1. Instale o [Node.js 24](https://nodejs.org/).
 2. Clone ou baixe este repositório.
-3. Execute `npm install` na pasta do projeto.
-4. Dê dois cliques em `INICIAR_KAKA_CUT.bat`.
+3. Dê dois cliques em `ABRIR_KAKA_CUT.vbs`.
+
+O iniciador abre somente a janela do aplicativo e prepara automaticamente a
+versão mais recente do código. Se houver algum problema, consulte
+`KAKA_CUT_INICIO.log`. O arquivo `INICIAR_KAKA_CUT.bat` pode ser usado para
+diagnóstico técnico.
 
 No aplicativo, clique em **Novo projeto**, escolha a pasta do episódio e use **Montar episódio** para revisar o SRT antes de criar a timeline.
 

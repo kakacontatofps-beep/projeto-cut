@@ -1,5 +1,5 @@
 import type { AgentContext } from '../context';
-import type { ClipEffect, TimelineItem, TransitionType, ZoomEffect } from '../../editor/types';
+import type { ClipEffect, TimelineItem, TransitionDirection, TransitionType, ZoomEffect } from '../../editor/types';
 import { applyGeneric } from './edit-item-generic';
 import { transitionAssetId } from './library-catalog';
 import { describeClip, findItem, type OpResult } from './edit-item-shared';
@@ -61,7 +61,7 @@ function commitTransitionPlan(ctx: AgentContext, plan: OpResult): OpResult {
   if (plan.plan === 'setTransition') {
     ctx.commands.setTransition(
       String(plan.id),
-      plan.patch as Partial<{ type: TransitionType; durationInFrames: number }>,
+      plan.patch as Partial<{ type: TransitionType; durationInFrames: number; direction: TransitionDirection; enabled: boolean }>,
     );
     return { ok: true, kind: 'transition', id: plan.id, patch: plan.patch };
   }
@@ -75,6 +75,12 @@ function commitTransitionPlan(ctx: AgentContext, plan: OpResult): OpResult {
     plan.durationInFrames as number | undefined,
     plan.custom as { frag: string; uniforms: Record<string, number>; label: string } | undefined,
   );
+  if (plan.direction !== undefined || plan.enabled !== undefined) {
+    ctx.commands.setTransition(id, {
+      ...(plan.direction !== undefined ? { direction: plan.direction as TransitionDirection } : {}),
+      ...(plan.enabled !== undefined ? { enabled: plan.enabled as boolean } : {}),
+    });
+  }
   return {
     ok: true,
     kind: 'transition',

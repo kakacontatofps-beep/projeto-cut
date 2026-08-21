@@ -248,7 +248,7 @@ export function ClipContextMenu({ item, transitions, x, y, playhead, commands, t
       <Item label={t('复制')} icon="copy" shortcut="⌘C" onClick={run(() => commands.duplicateItem(item.id))} />
       <Item label={t('切分')} icon="scissors" shortcut="C" disabled={!inside} onClick={run(() => commands.splitItem(item.id, playhead))} />
       <Sep />
-      <Item label={applied.length ? t('已应用效果（{n}）', { n: applied.length }) : t('已应用效果')} icon="filter" chevron disabled={applied.length === 0}
+      <Item label={applied.length ? t('管理已应用效果（{n}）', { n: applied.length }) : t('没有已应用效果')} icon="filter" chevron disabled={applied.length === 0}
         onClick={applied.length ? () => setShowApplied((v) => !v) : undefined} />
       {showApplied && applied.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 6px 6px 35px' }}>
@@ -257,7 +257,7 @@ export function ClipContextMenu({ item, transitions, x, y, playhead, commands, t
               onMouseEnter={(e) => { e.currentTarget.style.background = theme.bg; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}>
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>{a.label}</span>
-              <span style={{ color: theme.textDim, flexShrink: 0 }}>×</span>
+              <span style={{ color: theme.accent, flexShrink: 0 }}>{t('移除')}</span>
             </button>
           ))}
         </div>

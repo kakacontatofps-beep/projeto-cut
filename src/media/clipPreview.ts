@@ -30,6 +30,8 @@ type Entry = {
 };
 
 const entries = new Map<string, Entry>();
+const PEAK_PATH_CACHE_LIMIT = 64;
+const peakPathCache = new WeakMap<ClipPreview, Map<string, string>>();
 
 /** Only local assets can be previewed (blob:/remote URL server cannot reach) */
 export function isPreviewable(src: string | undefined): src is string {
@@ -190,6 +192,12 @@ export function peaksPath(
 ): string {
   const { peaks, peaksPerSecond } = preview;
   if (!peaks.length || widthPx <= 0) return '';
+  const cacheKey = [widthPx, height, fps, srcInFrame, durationInFrames, playbackRate]
+    .map((value) => Number(value).toFixed(3))
+    .join(':');
+  let previewCache = peakPathCache.get(preview);
+  const cached = previewCache?.get(cacheKey);
+  if (cached !== undefined) return cached;
   const cols = Math.max(1, Math.min(2000, Math.floor(widthPx / 2)));
   const mid = height / 2;
   const perFrame = peaksPerSecond / fps; // How many peaks does one source frame correspond to?
@@ -207,5 +215,15 @@ export function peaksPath(
     const x = ((c + 0.5) / cols) * widthPx;
     out.push(`M${x.toFixed(1)} ${(mid - amp).toFixed(1)}V${(mid + amp).toFixed(1)}`);
   }
-  return out.join(' ');
+  const path = out.join(' ');
+  if (!previewCache) {
+    previewCache = new Map<string, string>();
+    peakPathCache.set(preview, previewCache);
+  }
+  previewCache.set(cacheKey, path);
+  if (previewCache.size > PEAK_PATH_CACHE_LIMIT) {
+    const oldest = previewCache.keys().next().value;
+    if (oldest !== undefined) previewCache.delete(oldest);
+  }
+  return path;
 }

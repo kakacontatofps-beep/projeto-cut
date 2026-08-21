@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import type { BrowserExportInspection } from './browserExport';
-import { chooseSupportedRoute, recordExportPerformance } from './exportRoutePlanner';
+import { chooseSupportedRoute, recordExportPerformance, requestedServerEngine } from './exportRoutePlanner';
 import type { ExportEngineInfo } from './exportWorkflowTypes';
 
 const storageDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
@@ -33,6 +33,10 @@ try {
   assert.equal(chooseSupportedRoute(unsupported, hardware).route, 'server');
   assert.equal(chooseSupportedRoute(efficient, software).route, 'browser');
   assert.equal(chooseSupportedRoute(compatible, hardware).route, 'server');
+  assert.equal(requestedServerEngine('h264_nvenc', software).id, 'h264_nvenc');
+  assert.equal(requestedServerEngine('h264_nvenc', software).hardware, true);
+  assert.equal(requestedServerEngine('libx264', hardware).id, 'libx264');
+  assert.equal(requestedServerEngine('auto', hardware).id, 'h264_videotoolbox');
 
   values.set('cc.exportPerformance.v1', JSON.stringify({
     'browser:webcodecs': { samples: 2, workPerMillisecond: 20 },

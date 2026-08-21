@@ -95,7 +95,7 @@ export const TOOL_SCHEMAS: AgentToolSchema[] = [
   // browse_library → edit_item provides unified discovery and application for fx/lut/zoom/transition/sound.
   ...LIBRARY_TOOL_SCHEMAS,
   ...EDIT_ITEM_TOOL_SCHEMAS,
-  // Compatibility shortcut: manage_effects maps to edit_item type=effect list/add/update/remove.
+  // MCP-friendly effect/transition management with catalog, inspection and mutations.
   ...EFFECT_TOOL_SCHEMAS,
   // Project design system: manage_design_style list/get/apply/update/clear.
   ...DESIGN_TOOL_SCHEMAS,

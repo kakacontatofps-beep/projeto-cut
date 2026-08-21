@@ -73,6 +73,7 @@ const VERB: Record<string, string> = {
   isolate_voice: '人声隔离',
   apply_script: '改稿应用',
   manage_effects: '特效',
+  manage_transitions: '转场',
   edit_item: '编辑片段',
   browse_library: '浏览资源库',
 };

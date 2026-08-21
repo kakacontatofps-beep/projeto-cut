@@ -84,6 +84,7 @@ function browserOptions(context: VideoExportContext, signal: AbortSignal): Brows
     project,
     timelineId,
     codec,
+    h264EncoderPreference: context.options.h264EncoderPreference,
     resolution,
     fps,
     videoBitrate: requestedVideoBitrate,

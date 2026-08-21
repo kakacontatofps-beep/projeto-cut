@@ -18,6 +18,7 @@ export interface BrowserExportOptions {
   project?: ProjectDoc;
   timelineId?: string;
   codec: PlannedVideoCodec;
+  h264EncoderPreference?: import('./exportWorkflowTypes').H264EncoderPreference;
   resolution: ExportResolution;
   fps: number;
   videoBitrate?: number;

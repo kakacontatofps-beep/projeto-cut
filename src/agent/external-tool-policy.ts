@@ -15,7 +15,7 @@ const DRAFT_EDIT_TOOL_NAMES = new Set([
   'add_motion_graphic', 'update_item_props', 'move_item', 'set_item_timing',
   'duplicate_item', 'remove_item', 'split_item', 'add_audio', 'clear_timeline',
   'set_aspect_ratio', 'manage_timelines', 'edit_track', 'apply_script',
-  'edit_item', 'manage_effects', 'edit_captions', 'update_watermark',
+  'edit_item', 'manage_effects', 'manage_transitions', 'edit_captions', 'update_watermark',
   'manage_markers', 'apply_caption_avoidance', 'place_graphics_in_safe_zone', 'auto_reframe',
   'manage_design_style',
 ]);

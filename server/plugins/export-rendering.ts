@@ -3,6 +3,7 @@ import { mkdir, rename, unlink } from 'node:fs/promises';
 import {
   resolveH264RenderOptions,
   resolveH264TargetBitrate,
+  type H264Encoder,
   type H264EncoderOutcome,
 } from '../media-acceleration.ts';
 import { ffmpegBin } from '../media-binaries.ts';
@@ -46,9 +47,9 @@ export async function cleanupExportOutputs(paths: Array<string | null>): Promise
   return cleanupStatus;
 }
 
-export async function h264RenderOptions(codec: string) {
+export async function h264RenderOptions(codec: string, preferredEncoder?: H264Encoder) {
   return codec === 'h264'
-    ? resolveH264RenderOptions(ffmpegBin(), remotionFfmpegPath())
+    ? resolveH264RenderOptions(ffmpegBin(), remotionFfmpegPath(), process.platform, preferredEncoder)
     : {};
 }
 
@@ -75,7 +76,7 @@ export async function renderExportPlan(
       frameRange: plan.frameRange,
       scale: plan.scale,
       videoBitrate: plan.videoBitrate,
-      ...await h264RenderOptions(plan.media.codec),
+      ...await h264RenderOptions(plan.media.codec, plan.h264Encoder),
       onProgress: createRenderProgress(update, plan.totalFrames, plan.retimeFps ? 84 : 90),
       signal,
     }) as Partial<H264EncoderOutcome>;
@@ -92,6 +93,7 @@ export async function renderExportPlan(
         plan.media.codec as 'h264' | 'vp8',
         plan.videoBitrate ?? resolveH264TargetBitrate({ ...outputSize, fps: plan.retimeFps }),
         signal,
+        plan.h264Encoder,
       ));
       signal?.throwIfAborted();
       await unlink(filepath).catch(() => {});

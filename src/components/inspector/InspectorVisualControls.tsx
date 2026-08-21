@@ -138,6 +138,18 @@ export function EffectsControl({ item, onChange, previewStatus }: { item: Timeli
       </select>
       {active.length === 0 && <div style={{ fontSize: 10.5, color: theme.textDim }}>{t('尚未添加特效。')}</div>}
       {active.length > 0 && <PreviewFidelityStatus status={previewStatus} />}
+      {active.length > 0 && (
+        <button
+          type="button"
+          onClick={() => onChange(effects.filter((effect) => !(effect.assetId in FX_EFFECTS)))}
+          style={{
+            alignSelf: 'flex-start', border: `0.5px solid ${theme.border}`, borderRadius: 5,
+            background: theme.panelAlt, color: theme.accent, padding: '5px 8px', cursor: 'pointer', fontSize: 10.5,
+          }}
+        >
+          {t('移除所有特效')}
+        </button>
+      )}
       {active.map((effect, index) => {
         const def = FX_EFFECTS[effect.assetId];
         return (
@@ -148,7 +160,7 @@ export function EffectsControl({ item, onChange, previewStatus }: { item: Timeli
               </b>
               <button title={t('上移')} disabled={index === 0} onClick={() => moveEffect(index, -1)}>↑</button>
               <button title={t('下移')} disabled={index === active.length - 1} onClick={() => moveEffect(index, 1)}>↓</button>
-              <button title={t('移除特效')} onClick={() => onChange(effects.filter((fx) => fx.id !== effect.id))}>×</button>
+              <button title={t('移除特效')} onClick={() => onChange(effects.filter((fx) => fx.id !== effect.id))}>{t('移除')}</button>
             </div>
             <div style={{ fontSize: 10.5, color: theme.textDim, opacity: 0.75, lineHeight: 1.4 }}>{t(def.desc)}</div>
             {def.props.map((p) => {
@@ -176,4 +188,3 @@ export function EffectsControl({ item, onChange, previewStatus }: { item: Timeli
     </div>
   );
 }
-

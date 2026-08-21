@@ -5,7 +5,8 @@ documentários do Kaka Studio.
 
 ## Como abrir
 
-Execute `INICIAR_KAKA_CUT.bat`. Na página inicial:
+Dê dois cliques em `ABRIR_KAKA_CUT.vbs`. O aplicativo abre sem deixar uma
+janela de terminal visível. Na página inicial:
 
 1. clique em **Novo projeto**;
 2. escolha a pasta do episódio quando o Windows solicitar;
@@ -52,8 +53,8 @@ implica afiliação oficial com os mantenedores do OpenChatCut.
 
 ## Desenvolvimento
 
-A base requer Node.js 24. Neste computador, o iniciador usa o runtime isolado do
-Codex e não modifica a instalação global do Node.js.
+A base requer Node.js 24. O iniciador usa a instalação disponível no Windows,
+sem caminhos presos a um usuário específico.
 
 ```powershell
 npm install

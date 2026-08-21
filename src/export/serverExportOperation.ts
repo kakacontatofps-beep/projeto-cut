@@ -213,6 +213,7 @@ function recoveredContext(
     base: record.base,
     tab: record.format,
     codec: record.codec === 'vp8' ? 'vp8' : 'h264',
+    h264EncoderPreference: record.h264Encoder ?? 'auto',
     resolution: '1080p',
     fps: record.fps,
     subtitleFormat: 'srt',

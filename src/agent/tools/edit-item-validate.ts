@@ -240,6 +240,10 @@ function transitionPlan(
   const requested = typeof entry.durationInFrames === 'number' && Number.isFinite(entry.durationInFrames)
     ? entry.durationInFrames
     : defaultDuration;
+  if (entry.direction !== undefined && !['left', 'right', 'up', 'down'].includes(String(entry.direction))) {
+    return { error: `unknown transition direction ${entry.direction}` };
+  }
+  const direction = entry.direction === undefined ? undefined : String(entry.direction);
   return {
     ok: true,
     kind: 'transition',
@@ -249,6 +253,8 @@ function transitionPlan(
     type: resolved.type,
     assetId,
     durationInFrames: Math.max(2, Math.min(requested, maxDuration)),
+    ...(direction ? { direction } : {}),
+    ...(typeof entry.enabled === 'boolean' ? { enabled: entry.enabled } : {}),
     ...(resolved.custom ? { custom: resolved.custom } : {}),
   };
 }
@@ -368,14 +374,31 @@ function validateTransitionUpdate(ctx: AgentContext, entry: Entry): OpResult {
   const patch: Record<string, unknown> = {};
   if (typeof entry.durationInFrames === 'number') patch.durationInFrames = entry.durationInFrames;
   if (typeof entry.assetId === 'string') {
-    const type = parseTransitionAssetId(entry.assetId);
-    if (!type) return { error: `unknown transition assetId ${entry.assetId}` };
-    patch.type = type;
+    const resolved = resolveTransition(entry.assetId);
+    if ('error' in resolved) return resolved;
+    patch.type = resolved.type;
+    patch.customFrag = resolved.custom?.frag;
+    patch.customUniforms = resolved.custom?.uniforms;
+    patch.customLabel = resolved.custom?.label;
   }
   if (typeof entry.transitionType === 'string') {
     const type = parseTransitionAssetId(entry.transitionType) ?? entry.transitionType as TransitionType;
-    if (type) patch.type = type;
+    if (type) {
+      patch.type = type;
+      if (type !== 'custom-shader') {
+        patch.customFrag = undefined;
+        patch.customUniforms = undefined;
+        patch.customLabel = undefined;
+      }
+    }
   }
+  if (entry.direction !== undefined) {
+    if (!['left', 'right', 'up', 'down'].includes(String(entry.direction))) {
+      return { error: `unknown transition direction ${entry.direction}` };
+    }
+    patch.direction = entry.direction;
+  }
+  if (typeof entry.enabled === 'boolean') patch.enabled = entry.enabled;
   return { ok: true, kind: 'transition', plan: 'setTransition', id: transition.id, patch };
 }
 

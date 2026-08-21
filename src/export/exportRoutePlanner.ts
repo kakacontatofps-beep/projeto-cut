@@ -1,5 +1,5 @@
 import { inspectBrowserExport, isAbortError, type BrowserExportInspection, type BrowserExportOptions } from './browserExport';
-import type { ExportEngineInfo } from './exportWorkflowTypes';
+import type { ExportEngineInfo, H264EncoderPreference } from './exportWorkflowTypes';
 
 const PERFORMANCE_STORAGE_KEY = 'cc.exportPerformance.v1';
 const MIN_SAMPLE_MS = 250;
@@ -40,6 +40,12 @@ function browserEngine(powerEfficient?: boolean): ExportEngineInfo {
 
 function unknownServerEngine(): ExportEngineInfo {
   return { id: 'local-renderer', label: '本机兼容渲染', hardware: false, transport: 'server' };
+}
+
+export function requestedServerEngine(preference: H264EncoderPreference | undefined, detected: ExportEngineInfo): ExportEngineInfo {
+  if (preference === 'h264_nvenc') return { id: 'h264_nvenc', label: 'NVIDIA NVENC', hardware: true, transport: 'server' };
+  if (preference === 'libx264') return { id: 'libx264', label: 'Software (libx264)', hardware: false, transport: 'server' };
+  return detected;
 }
 
 async function loadServerCapabilities(signal?: AbortSignal): Promise<ServerCapabilities> {
@@ -110,7 +116,8 @@ export async function planVideoExportRoute(options: BrowserExportOptions): Promi
     inspectBrowser(options),
     loadServerCapabilities(options.signal),
   ]);
-  const server = options.codec === 'h264' ? capabilities.h264 ?? unknownServerEngine() : unknownServerEngine();
+  const detectedServer = options.codec === 'h264' ? capabilities.h264 ?? unknownServerEngine() : unknownServerEngine();
+  const server = requestedServerEngine(options.h264EncoderPreference, detectedServer);
   const browserEngineInfo = browserEngine(browser.status === 'supported' ? browser.powerEfficient : undefined);
   // ProRes mezzanine is Remotion/server-only (not WebCodecs).
   if (options.codec === 'prores') {
@@ -127,6 +134,18 @@ export async function planVideoExportRoute(options: BrowserExportOptions): Promi
       route: 'server',
       engine: mezzanine,
       reason: 'ProRes 母带仅支持本机渲染',
+    };
+  }
+  if (options.codec === 'h264' && options.h264EncoderPreference && options.h264EncoderPreference !== 'auto') {
+    return {
+      browser,
+      browserEngine: browserEngineInfo,
+      serverEngine: server,
+      route: 'server',
+      engine: server,
+      reason: options.h264EncoderPreference === 'h264_nvenc'
+        ? 'NVIDIA NVENC solicitado; usando o renderizador local'
+        : 'Codificação por CPU solicitada; usando o renderizador local',
     };
   }
   return {

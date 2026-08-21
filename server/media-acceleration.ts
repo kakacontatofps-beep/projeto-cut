@@ -280,14 +280,15 @@ export async function selectWorkingH264Encoder(
 export function resolveH264Encoder(
   ffmpeg: string,
   platform: NodeJS.Platform = process.platform,
+  preferredEncoder?: H264Encoder,
 ): Promise<H264Encoder> {
   const forcedValue = process.env.OPENCHATCUT_H264_ENCODER?.trim();
-  const forced = forcedValue && Object.hasOwn(KNOWN_ENCODERS, forcedValue)
+  const forced = preferredEncoder ?? (forcedValue && Object.hasOwn(KNOWN_ENCODERS, forcedValue)
     ? forcedValue as H264Encoder
-    : undefined;
+    : undefined);
   const disabled = disabledByEnvironment();
   const vaapiDevice = resolveVaapiDevice();
-  const key = `${ffmpeg}\0${platform}\0${forcedValue ?? ''}\0${disabled}\0${vaapiDevice}`;
+  const key = `${ffmpeg}\0${platform}\0${forced ?? ''}\0${disabled}\0${vaapiDevice}`;
   const existing = encoderCache.get(key);
   if (existing) return existing;
 
@@ -305,8 +306,9 @@ export function resolveH264Encoder(
 export async function resolveH264EncoderProfile(
   ffmpeg: string,
   platform: NodeJS.Platform = process.platform,
+  preferredEncoder?: H264Encoder,
 ): Promise<H264EncoderProfile> {
-  return h264EncoderProfile(await resolveH264Encoder(ffmpeg, platform));
+  return h264EncoderProfile(await resolveH264Encoder(ffmpeg, platform, preferredEncoder));
 }
 
 export interface H264RenderOptions {
@@ -318,8 +320,9 @@ export async function resolveH264RenderOptions(
   probeFfmpeg: string,
   rendererFfmpeg = probeFfmpeg,
   platform: NodeJS.Platform = process.platform,
+  preferredEncoder?: H264Encoder,
 ): Promise<H264RenderOptions> {
-  const detected = await resolveH264EncoderProfile(probeFfmpeg, platform);
+  const detected = await resolveH264EncoderProfile(probeFfmpeg, platform, preferredEncoder);
   const rendererSupportsDetected = !detected.hardware
     || await probeCompiledEncoder(rendererFfmpeg, detected.id);
   return {

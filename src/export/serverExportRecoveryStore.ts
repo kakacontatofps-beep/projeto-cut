@@ -42,6 +42,7 @@ export interface PersistedServerExportJob {
   updatedAt: number;
   format: 'video' | 'audio';
   codec: 'h264' | 'vp8' | 'prores' | 'mp3';
+  h264Encoder?: 'h264_nvenc' | 'libx264';
   base: string;
   fps: number;
   state: TimelineState;
@@ -127,6 +128,7 @@ export function validRecord(value: unknown): value is PersistedServerExportJob {
     && typeof record.updatedAt === 'number' && Number.isFinite(record.updatedAt)
     && (record.format === 'video' || record.format === 'audio')
     && (record.codec === 'h264' || record.codec === 'vp8' || record.codec === 'prores' || record.codec === 'mp3')
+    && (record.h264Encoder === undefined || record.h264Encoder === 'h264_nvenc' || record.h264Encoder === 'libx264')
     && typeof record.base === 'string'
     && typeof record.fps === 'number' && record.fps > 0
     && !!record.state && typeof record.state === 'object'

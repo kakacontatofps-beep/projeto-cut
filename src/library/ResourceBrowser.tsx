@@ -59,6 +59,8 @@ interface ResourceBrowserProps {
   layout?: 'list' | 'grid';
   /** enable HTML5 drag onto timeline clips (kind in payload) */
   dragKind?: LibraryDragKind;
+  /** Optional local catalog search. Searches translated name, description and id. */
+  searchPlaceholder?: string;
 }
 
 type Translate = typeof translate;
@@ -249,8 +251,16 @@ function usePreviewCleanupRegistration(scope: LibraryDragKind | undefined): Regi
 
 export function ResourceBrowser({
   hint, items, onApply, applicable, disabledNote, thumb, renderThumb, layout = 'list', dragKind,
+  searchPlaceholder,
 }: ResourceBrowserProps) {
   const t = useT();
+  const [query, setQuery] = useState('');
+  const visibleItems = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase();
+    if (!needle) return items;
+    return items.filter((item) => [item.id, t(item.name), item.desc ? t(item.desc) : '']
+      .some((value) => value.toLocaleLowerCase().includes(needle)));
+  }, [items, query, t]);
   const registerCleanup = usePreviewCleanupRegistration(dragKind);
   const { activeId, setPointerId, setFocusId } = useActivePreview(dragKind);
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -272,16 +282,32 @@ export function ResourceBrowser({
     <PreviewCleanupContext.Provider value={registerCleanup}>
       <div className={layout === 'grid' ? 'cc-resource-browser' : undefined}
         style={layout === 'list' ? { display: 'flex', flexDirection: 'column', gap: 8 } : undefined}>
+        {searchPlaceholder ? (
+          <label className="cc-resource-search">
+            <span aria-hidden="true">⌕</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t(searchPlaceholder)}
+              aria-label={t(searchPlaceholder)}
+            />
+            {query ? (
+              <button type="button" onClick={() => setQuery('')} title={t('清除搜索')}>×</button>
+            ) : null}
+          </label>
+        ) : null}
         <div className={layout === 'grid' ? 'cc-resource-hint' : undefined}
           style={{ color: disabledNote ? theme.accent : theme.textDim }}>
           {hintText}
         </div>
-        {layout === 'grid' ? (
-          <ResourceGrid items={items} activeId={activeId} draggedId={draggedId}
+        {visibleItems.length === 0 ? (
+          <div className="cc-resource-empty">{t('没有找到匹配的效果或转场')}</div>
+        ) : layout === 'grid' ? (
+          <ResourceGrid items={visibleItems} activeId={activeId} draggedId={draggedId}
             clickable={clickable} canDrag={canDrag} renderThumb={renderThumb} thumb={thumb}
             onApply={onApply} onDragStart={onDragStart} onDragChange={setDraggedId}
             onPointerChange={setPointerId} onFocusChange={setFocusId} t={t} />
-        ) : items.map((item) => (
+        ) : visibleItems.map((item) => (
           <ResourceListItem key={item.id} item={item} clickable={clickable} canDrag={canDrag}
             thumb={thumb} onApply={onApply} onDragStart={onDragStart} onDragChange={setDraggedId} t={t} />
         ))}

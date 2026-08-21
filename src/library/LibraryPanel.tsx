@@ -47,8 +47,51 @@ const AUDIO_TRANSITION_ITEMS: ResourceItem[] = AUDIO_TRANSITION_ORDER.map((t) =>
   badge: '音频',
   thumb: AUDIO_CROSSFADE_THUMB,
 }));
-const FX_ITEMS: ResourceItem[] = FX_IDS.map((id) => ({ id, name: FX_EFFECTS[id].name }));
+const FX_ITEMS: ResourceItem[] = FX_IDS.map((id) => ({
+  id,
+  name: FX_EFFECTS[id].name,
+  desc: FX_EFFECTS[id].desc,
+}));
 const ZOOM_ITEMS: ResourceItem[] = ZOOM_SHAPE_ORDER.map((s) => ({ id: s, name: ZOOM_SHAPE_LABELS[s] }));
+
+type FxCategory = 'all' | 'utility' | 'color' | 'cinema' | 'creative';
+
+const FX_CATEGORIES: ReadonlyArray<{ id: FxCategory; label: string }> = [
+  { id: 'all', label: '全部效果' },
+  { id: 'utility', label: '实用工具' },
+  { id: 'color', label: '颜色校正' },
+  { id: 'cinema', label: '电影质感' },
+  { id: 'creative', label: '创意风格' },
+];
+
+const FX_CATEGORY_IDS: Record<Exclude<FxCategory, 'all'>, ReadonlySet<string>> = {
+  utility: new Set([
+    'builtin:fx-luma-key', 'builtin:fx-local-mosaic', 'builtin:fx-magnify',
+    'builtin:fx-rect-mask', 'builtin:fx-circle-mask', 'builtin:fx-chroma-key',
+  ]),
+  color: new Set([
+    'builtin:fx-color-wheels', 'builtin:fx-levels', 'builtin:fx-highlights-shadows',
+    'builtin:fx-clarity', 'builtin:fx-hsl-qualify', 'builtin:fx-duotone',
+    'builtin:fx-sepia', 'builtin:fx-invert',
+  ]),
+  cinema: new Set([
+    'builtin:fx-shake', 'builtin:fx-tilt-shift', 'builtin:fx-vignette',
+    'builtin:fx-film-grain', 'builtin:fx-bloom', 'builtin:fx-soft-blur',
+    'builtin:fx-light-leak', 'builtin:fx-motion-blur',
+  ]),
+  creative: new Set([
+    'builtin:fx-crt', 'builtin:fx-ascii-rain', 'builtin:fx-rgb-split',
+    'builtin:fx-glitch', 'builtin:fx-pixelate', 'builtin:fx-posterize',
+    'builtin:fx-mirror', 'builtin:fx-fisheye', 'builtin:fx-kaleidoscope',
+    'builtin:fx-edge-glow', 'builtin:fx-halftone',
+  ]),
+};
+
+interface ActiveTransitionPreset {
+  id: string;
+  type: TransitionType;
+  custom?: { frag: string; uniforms: Record<string, number>; label: string };
+}
 export interface SequenceLibraryOption {
   id: string;
   name: string;
@@ -122,6 +165,7 @@ interface LibraryPanelProps {
   selectedItem: TimelineItem | null;
   /** custom = plugin transition (type='custom-shader' snapshot frag into TransitionItem) */
   onApplyTransition: (type: TransitionType, custom?: { frag: string; uniforms: Record<string, number>; label: string }) => void;
+  onApplyTransitionToTrack: (type: TransitionType, custom?: { frag: string; uniforms: Record<string, number>; label: string }) => number;
   onApplyFx: (assetId: string) => void;
   /** The built-in curve passes {shape}; the plugin curve passes {envelope, label} (see PluginBrowser.asPluginZoom) */
   onApplyZoom: (zoom: ZoomEffect) => void;
@@ -133,12 +177,17 @@ function localizeDefaultSequenceName(name: string, t: ReturnType<typeof useT>): 
   const match = /^序列 (\d+)$/.exec(name);
   return match ? t('序列 {n}', { n: match[1]! }) : name;
 }
-export function LibraryPanel({ semanticScopeId, templates, onAddTemplate, onAddAudio, playerRef, fps, items, sequenceOptions, onAddSequence, trackOptions, captionTracks, onSetCaptions, onCreateCaptionTrack, onUpdateCaptions, onSetItemTranscript, onToggleWord, onCleanScript, onSetGapCap, onSetTranscriptPlayOrder, onReorderTrackItems, onClearEdits, assets, mediaFolders, usedAssetIds, offlineAssetIds, onAssetLoadError, onImportMedia, onImportMobileMedia, onIngestDirectoryAsset, onTranscribeAsset, onAddMediaItem, onAddMediaAssetsToTimeline, onAssembleEpisode, onUseMediaAI, onCreateMediaFolder, onRenameMediaFolder, onDeleteMediaFolder, onMoveMediaAssets, onRenameMediaAsset, onRenameMediaAssets, onSetMediaAssetFavorite, onSetMediaAssetsFavorite, onRemoveMediaAsset, onRemoveMediaAssets, onPasteMediaAssets, onRelinkMediaAsset, creativeMode, onCreativeModeChange, onAddSolid, onUseTemplateAI, selectedItem, onApplyTransition, onApplyFx, onApplyZoom }: LibraryPanelProps) {
+export function LibraryPanel({ semanticScopeId, templates, onAddTemplate, onAddAudio, playerRef, fps, items, sequenceOptions, onAddSequence, trackOptions, captionTracks, onSetCaptions, onCreateCaptionTrack, onUpdateCaptions, onSetItemTranscript, onToggleWord, onCleanScript, onSetGapCap, onSetTranscriptPlayOrder, onReorderTrackItems, onClearEdits, assets, mediaFolders, usedAssetIds, offlineAssetIds, onAssetLoadError, onImportMedia, onImportMobileMedia, onIngestDirectoryAsset, onTranscribeAsset, onAddMediaItem, onAddMediaAssetsToTimeline, onAssembleEpisode, onUseMediaAI, onCreateMediaFolder, onRenameMediaFolder, onDeleteMediaFolder, onMoveMediaAssets, onRenameMediaAsset, onRenameMediaAssets, onSetMediaAssetFavorite, onSetMediaAssetsFavorite, onRemoveMediaAsset, onRemoveMediaAssets, onPasteMediaAssets, onRelinkMediaAsset, creativeMode, onCreativeModeChange, onAddSolid, onUseTemplateAI, selectedItem, onApplyTransition, onApplyTransitionToTrack, onApplyFx, onApplyZoom }: LibraryPanelProps) {
   const t = useT();
   const selKind = selectedItem?.kind ?? null;
   const isVisual = selKind != null && selKind !== 'audio';
   const [mainTab, setMainTab] = useState<(typeof MAIN_TABS)[number]>('我的素材');
-  const [subTab, setSubTab] = useState<(typeof SUB_TABS)[number]>('MG 动画');
+  const [subTab, setSubTab] = useState<(typeof SUB_TABS)[number]>('特效');
+  const [fxCategory, setFxCategory] = useState<FxCategory>('all');
+  const [activeTransition, setActiveTransition] = useState<ActiveTransitionPreset>({
+    id: 'cross-dissolve',
+    type: 'cross-dissolve',
+  });
   const [extensionOpen, setExtensionOpen] = useState(false);
   const [directoryImportError, setDirectoryImportError] = useState<string | null>(null);
   const [episodeAssemblerOpen, setEpisodeAssemblerOpen] = useState(false);
@@ -176,14 +225,32 @@ export function LibraryPanel({ semanticScopeId, templates, onAddTemplate, onAddA
   // The installed extension items are merged into each category (with the "Extension" corner mark); zoom/transition is split by id in onApply
   const pluginPacks = usePluginPacks();
   const transitionItems = [...TRANSITION_ITEMS, ...pluginResourceItems(pluginPacks, 'transition')];
-  const fxItems = [...FX_ITEMS, ...pluginResourceItems(pluginPacks, 'fx')];
+  const allFxItems = [...FX_ITEMS, ...pluginResourceItems(pluginPacks, 'fx')];
+  const fxItems = fxCategory === 'all'
+    ? allFxItems
+    : allFxItems.filter((item) => FX_CATEGORY_IDS[fxCategory].has(item.id));
   const lutItems = [...LUT_ITEMS, ...pluginResourceItems(pluginPacks, 'lut')];
   const zoomItems = [...ZOOM_ITEMS, ...pluginResourceItems(pluginPacks, 'zoom')];
   const applyTransitionById = (id: string) => {
-    if (!isPluginAssetId(id)) { onApplyTransition(id as TransitionType); return; }
+    if (!isPluginAssetId(id)) {
+      const preset = { id, type: id as TransitionType };
+      setActiveTransition(preset);
+      onApplyTransition(preset.type);
+      return;
+    }
     const def = getCustomTransition(id);
-    if (def) onApplyTransition('custom-shader', { frag: def.frag, uniforms: customTransitionUniforms(def), label: def.label });
+    if (def) {
+      const preset: ActiveTransitionPreset = {
+        id,
+        type: 'custom-shader',
+        custom: { frag: def.frag, uniforms: customTransitionUniforms(def), label: def.label },
+      };
+      setActiveTransition(preset);
+      onApplyTransition(preset.type, preset.custom);
+    }
   };
+  const activeTransitionName = transitionItems.find((item) => item.id === activeTransition.id)?.name
+    ?? TRANSITION_LABELS[activeTransition.type];
   const applyZoomById = (id: string) => {
     const data = zoomItems.find((x) => x.id === id)?.data;
     const pluginZoom = data ? asPluginZoom(data) : null;
@@ -334,6 +401,20 @@ export function LibraryPanel({ semanticScopeId, templates, onAddTemplate, onAddA
             <div style={{ fontSize: 11, color: theme.textDim, margin: '0 4px 8px', letterSpacing: 0.3 }}>
               {t('画面转场 · Video')}
             </div>
+            <div className="cc-transition-track-action">
+              <div>
+                <strong>{t(activeTransitionName)}</strong>
+                <span>{selectedItem ? t('已选轨道：{track}', { track: selectedItem.track }) : t('请在时间线上选择一个 B-roll')}</span>
+              </div>
+              <button
+                type="button"
+                disabled={!isVisual}
+                onClick={() => onApplyTransitionToTrack(activeTransition.type, activeTransition.custom)}
+                title={t('将所选转场应用到当前轨道的所有相邻切点')}
+              >
+                {t('应用到全部切点')}
+              </button>
+            </div>
             <ResourceBrowser
               layout="grid"
               dragKind="transition"
@@ -341,20 +422,36 @@ export function LibraryPanel({ semanticScopeId, templates, onAddTemplate, onAddA
               items={transitionItems}
               applicable={selectedItem != null && selKind !== 'audio'}
               onApply={applyTransitionById}
+              searchPlaceholder="搜索转场"
               // Built-in and plugin:/custom: the same set of A/B samples + hover 0→1 preview (true GLSL)
               renderThumb={(id, hovered) => <TransitionThumb type={id} playing={hovered} />}
             />
           </div>
         ) : subTab === '特效' ? (
-          <ResourceBrowser
-            layout="grid"
-            dragKind="fx"
-            hint="悬停预览 · 点击应用到选中视频/图片"
-            items={fxItems}
-            applicable={selKind === 'video' || selKind === 'image'}
-            onApply={(id) => onApplyFx(id)}
-            renderThumb={(id, hovered) => <FxThumb assetId={id} playing={hovered} />}
-          />
+          <div className="cc-fx-library">
+            <div className="cc-fx-category-tabs">
+              {FX_CATEGORIES.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  className={fxCategory === category.id ? 'selected' : ''}
+                  onClick={() => setFxCategory(category.id)}
+                >
+                  {t(category.label)}
+                </button>
+              ))}
+            </div>
+            <ResourceBrowser
+              layout="grid"
+              dragKind="fx"
+              hint="悬停预览 · 点击应用到选中视频/图片"
+              items={fxItems}
+              applicable={selKind === 'video' || selKind === 'image'}
+              onApply={(id) => onApplyFx(id)}
+              searchPlaceholder="搜索特效"
+              renderThumb={(id, hovered) => <FxThumb assetId={id} playing={hovered} />}
+            />
+          </div>
         ) : subTab === '缩放' ? (
           <ResourceBrowser
             layout="grid"

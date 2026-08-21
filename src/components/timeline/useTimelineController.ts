@@ -37,6 +37,7 @@ import { isTimelineDragOverChat } from './timelineChatDrop';
 import {
   HEADER_W, MAX_ROW, MIN_ROW, RULER_H, TRACK_ROW, buildTimelineIndexes,
   rulerMajorSeconds, rulerMinorCount, timelineFrameWindow, timelinePinnedItemIds,
+  timelineViewportFitsWindow,
   type EditMode,
 } from './timelineUtil';
 import {
@@ -207,7 +208,11 @@ export function useTimelineController({
     for (const reference of references) emitSelectionRef(reference);
     requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-cc-chat-composer]')?.focus());
   };
-  const [viewport, setViewport] = useState({ scrollLeft: 0, clientWidth: 0 });
+  const [viewport, setViewport] = useState({
+    clientWidth: 0,
+    px: 0,
+    visibleWindow: { startFrame: 0, endFrame: 1 },
+  });
   // content is at least as wide as the panel, so track rows/ruler never stop
   // short of the right edge when the project is short or zoomed out.
   const innerW = Math.max(HEADER_W + total * px + 240, viewport.clientWidth);
@@ -217,9 +222,12 @@ export function useTimelineController({
     let raf = 0;
     const measure = () => {
       raf = 0;
-      const next = { scrollLeft: el.scrollLeft, clientWidth: el.clientWidth };
-      setViewport((current) => current.scrollLeft === next.scrollLeft
-        && current.clientWidth === next.clientWidth ? current : next);
+      const nextWindow = timelineFrameWindow(el.scrollLeft, el.clientWidth, px);
+      setViewport((current) => current.clientWidth === el.clientWidth
+        && current.px === px
+        && timelineViewportFitsWindow(el.scrollLeft, el.clientWidth, px, current.visibleWindow)
+        ? current
+        : { clientWidth: el.clientWidth, px, visibleWindow: nextWindow });
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(measure); };
     measure();
@@ -231,11 +239,8 @@ export function useTimelineController({
       ro.disconnect();
       el.removeEventListener('scroll', schedule);
     };
-  }, []);
-  const visibleWindow = useMemo(
-    () => timelineFrameWindow(viewport.scrollLeft, viewport.clientWidth, px),
-    [px, viewport.clientWidth, viewport.scrollLeft],
-  );
+  }, [px]);
+  const visibleWindow = viewport.visibleWindow;
 
   // equal-height tracks; scale via Alt+wheel. (collapse UI removed — always full row)
   // Duck role is set via agent edit_track / track menu — not permanent track-header widgets.

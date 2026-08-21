@@ -35,6 +35,8 @@ import {
 } from '../../captions/captionGroupMove';
 import { droppedFiles, hasExternalFiles } from '../../media/externalFileDrop';
 
+const EMPTY_TRACK_ITEMS: readonly TimelineItem[] = [];
+
 /** corner chips so applied fx / lut / zoom / denoise / transition are visible on the clip */
 function ClipEffectBadges({
   item,
@@ -138,13 +140,16 @@ export function TrackLane({
 }: TrackLaneProps) {
   const t = useT();
   const { drag, penDrag, setPenDrag, startDrag, startPick, startMarquee } = pointer;
-  const trackIds = timelineTrackIds(state);
-  const items = indexes.itemsByTrack.get(trackId) ?? [];
+  const trackIds = useMemo(() => timelineTrackIds(state), [state]);
+  const items = indexes.itemsByTrack.get(trackId) ?? EMPTY_TRACK_ITEMS;
   const previewPinnedItemIds = useMemo(() => {
     if (!selectionMovePreview?.itemIds.length) return pinnedItemIds;
     return new Set([...pinnedItemIds, ...selectionMovePreview.itemIds]);
   }, [pinnedItemIds, selectionMovePreview]);
-  const itemIndexById = new Map(items.map((item, index) => [item.id, index]));
+  const itemIndexById = useMemo(
+    () => new Map(items.map((item, index) => [item.id, index])),
+    [items],
+  );
   const renderedItems = useMemo(() => visibleTimelineItems(
     indexes.itemWindowsByTrack.get(trackId),
     visibleWindow,

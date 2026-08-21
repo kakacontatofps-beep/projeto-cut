@@ -14,6 +14,8 @@ const TRANSITION_ADD_KEYS: AllowedFields = {
   incomingItemId: true,
   outgoingItemId: true,
   durationInFrames: true,
+  direction: true,
+  enabled: true,
   trackId: true,
   fromFrame: true,
 };
@@ -40,6 +42,8 @@ const TRANSITION_UPDATE_KEYS: AllowedFields = {
   assetId: true,
   transitionType: true,
   durationInFrames: true,
+  direction: true,
+  enabled: true,
 };
 const EFFECT_DELETE_KEYS: AllowedFields = {
   type: true,

@@ -8,6 +8,7 @@ import {
   rulerTickWindow,
   timelineFrameWindow,
   timelinePinnedItemIds,
+  timelineViewportFitsWindow,
   visibleTimelineItems,
 } from './timelineUtil';
 
@@ -44,6 +45,14 @@ const state: TimelineState = {
   assert.deepEqual(window, { startFrame: 294, endFrame: 994 });
   assert.deepEqual(intersectFrameRange(280, 40, window), { startFrame: 294, endFrame: 320 });
   assert.equal(intersectFrameRange(0, 20, window), null);
+}
+
+{
+  const window = timelineFrameWindow(1_000, 1_000, 2);
+  assert.equal(timelineViewportFitsWindow(1_080, 1_000, 2, window), true,
+    'small scroll deltas reuse the overscanned render window');
+  assert.equal(timelineViewportFitsWindow(1_700, 1_000, 2, window), false,
+    'large scroll deltas refresh the render window before overscan is exhausted');
 }
 
 {

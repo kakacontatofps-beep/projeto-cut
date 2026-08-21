@@ -225,6 +225,7 @@ export async function retimeFps(
   codec: 'h264' | 'vp8',
   targetBitrate: number,
   signal?: AbortSignal,
+  preferredEncoder?: H264Encoder,
 ): Promise<H264EncoderOutcome | undefined> {
   await unlink(output).catch(() => {});
   const base = ['-nostdin', '-hide_banner', '-loglevel', 'error', '-y'];
@@ -240,7 +241,7 @@ export async function retimeFps(
       ], signal);
       return undefined;
     }
-    return await retimeH264(base, input, output, targetFps, targetBitrate, signal);
+    return await retimeH264(base, input, output, targetFps, targetBitrate, signal, preferredEncoder);
   } catch (error) {
     await unlink(output).catch(() => {});
     throw error;
@@ -254,8 +255,9 @@ async function retimeH264(
   targetFps: number,
   targetBitrate: number,
   signal?: AbortSignal,
+  preferredEncoder?: H264Encoder,
 ): Promise<H264EncoderOutcome> {
-  const preferred = await resolveH264Encoder(ffmpegBin());
+  const preferred = await resolveH264Encoder(ffmpegBin(), process.platform, preferredEncoder);
   let fallbackReason: string | undefined;
   let lastError: unknown;
   for (const encoder of h264EncoderAttempts(preferred)) {

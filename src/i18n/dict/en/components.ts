@@ -229,6 +229,7 @@ export default {
   '上移': 'Move up',
   '下移': 'Move down',
   '移除特效': 'Remove effect',
+  '移除所有特效': 'Remove all effects',
 
   // ---- InspectorPanel: Main panel ----
   '展开属性': 'Expand properties',

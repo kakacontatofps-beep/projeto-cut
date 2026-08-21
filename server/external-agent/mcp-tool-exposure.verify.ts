@@ -28,6 +28,7 @@ const catalog: Tool[] = [
   { name: 'read_project', inputSchema: { type: 'object' } },
   { name: 'submit_export', inputSchema: { type: 'object' } },
   { name: 'edit_captions', inputSchema: { type: 'object' } },
+  { name: 'manage_transitions', inputSchema: { type: 'object' } },
 ];
 
 const full = initialMcpToolExposure('full');
@@ -39,15 +40,20 @@ assert.deepEqual(
   ['openchatcut_status', 'ToolSearch', 'load_skill', 'read_project'],
 );
 const searched = activateMcpToolExposure(first, 'ToolSearch', {
-  results: [{ name: 'submit_export' }, { name: 'not_a_tool' }],
+  results: [{ name: 'submit_export' }, { name: 'manage_transitions' }, { name: 'not_a_tool' }],
 }, catalog, 10);
 assert.equal(searched.revision, first.revision + 1);
 assert.deepEqual(searched.lastActivation, {
-  source: 'tool_search', names: ['submit_export'], at: 10,
+  source: 'tool_search', names: ['submit_export', 'manage_transitions'], at: 10,
 });
 assert.equal(
   projectMcpToolExposure(searched, catalog, controls)
     .some((tool) => tool.name === 'submit_export'),
+  true,
+);
+assert.equal(
+  projectMcpToolExposure(searched, catalog, controls)
+    .some((tool) => tool.name === 'manage_transitions'),
   true,
 );
 

@@ -33,7 +33,7 @@ import {
   type QualityMode,
 } from '../media/qualityPolicy';
 import type { ExportDestination } from './exportDestination';
-import type { ExportEngineInfo, ExportEngineReason } from './exportWorkflowTypes';
+import type { ExportEngineInfo, ExportEngineReason, H264EncoderPreference } from './exportWorkflowTypes';
 import {
   effectiveIncludeMg,
   useExportWorkflow,
@@ -68,6 +68,8 @@ export type ExportVideoCodec = 'h264' | 'vp8' | 'prores';
 export interface ExportVideoSettings {
   codec: ExportVideoCodec;
   setCodec: Dispatch<SetStateAction<ExportVideoCodec>>;
+  h264EncoderPreference: H264EncoderPreference;
+  setH264EncoderPreference: Dispatch<SetStateAction<H264EncoderPreference>>;
   resolution: ExportResolution;
   setResolution: Dispatch<SetStateAction<ExportResolution>>;
   fps: number;
@@ -135,6 +137,7 @@ export interface ExportDialogModel {
 
 function useVideoSettings(state: TimelineState, qualityMode: QualityMode): ExportVideoSettings {
   const [codec, setCodec] = useState<ExportVideoCodec>('h264');
+  const [h264EncoderPreference, setH264EncoderPreference] = useState<H264EncoderPreference>('auto');
   const [resolution, setResolution] = useState<ExportResolution>(() => exportResolutionForCanvas(state, qualityMode));
   const initialFps = EXPORT_FPS.some((candidate) => candidate === state.fps) ? state.fps : 30;
   const [fps, setFps] = useState(initialFps);
@@ -153,7 +156,7 @@ function useVideoSettings(state: TimelineState, qualityMode: QualityMode): Expor
   // ProRes is mezzanine: remotion ignores bitrate; do not send a false target.
   const requestedBitrate = codec === 'prores' ? undefined : requestedVideoBitrateBps(bitrateInput);
   return {
-    codec, setCodec, resolution, setResolution, fps, setFps, bitrateMode, setBitrateMode,
+    codec, setCodec, h264EncoderPreference, setH264EncoderPreference, resolution, setResolution, fps, setFps, bitrateMode, setBitrateMode,
     customBitrateMbps, setCustomBitrateMbps, dimensions,
     resolvedBitrate,
     requestedBitrate,
@@ -208,7 +211,8 @@ export function useExportDialogModel({ state, project, projectId, projectName, e
   const includeAvailableMg = effectiveIncludeMg(includeMg, mgItems);
   const base = sanitizeFileName(projectName, 'export');
   const workflow = useExportWorkflow({
-    state, project, timelineId: project.activeTimelineId, projectId, projectName, base, tab, codec: video.codec, resolution: video.resolution,
+    state, project, timelineId: project.activeTimelineId, projectId, projectName, base, tab, codec: video.codec,
+    h264EncoderPreference: video.h264EncoderPreference, resolution: video.resolution,
     fps: video.fps, requestedVideoBitrate: video.requestedBitrate,
     subtitleFormat: subtitles.format, subtitleCaptions: subtitles.captions,
     nleFormat, includeMg: includeAvailableMg, mgItems, onClose,

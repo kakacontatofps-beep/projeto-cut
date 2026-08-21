@@ -44,6 +44,9 @@ export default {
   // Parameter line
   '编码': 'Codec',
   '格式 / 编码': 'Format / codec',
+  '视频编码器': 'Video encoder',
+  '自动选择': 'Automatic selection',
+  'CPU · libx264': 'CPU · libx264',
   '画质策略': 'Quality policy',
   '均衡': 'Balanced',
   '画质优先': 'Master quality',

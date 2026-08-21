@@ -2,6 +2,7 @@
 // Run with: npx tsx server/plugins/export-params.verify.ts (connected to npm test).
 import assert from 'node:assert/strict';
 import { exportScale, validateVideoParams } from './export.ts';
+import { planExport } from './export-plan.ts';
 import { requestedVideoBitrateBps, resolveVideoBitrateBps } from '../../src/export/bitrate.ts';
 
 // Short-edge presets preserve orientation; 4K means a 2160 px short edge.
@@ -32,6 +33,19 @@ assert.deepEqual(
 
 validateVideoParams({ resolution: '4k', fps: 60, videoBitrate: 40_000_000 }, 'video');
 validateVideoParams(null, 'audio');
+const planState = {
+  fps: 30,
+  width: 1920,
+  height: 1080,
+  selectedId: null,
+  items: [],
+};
+assert.equal(planExport({ state: planState, codec: 'h264', h264Encoder: 'h264_nvenc' }).h264Encoder, 'h264_nvenc');
+assert.equal(planExport({ state: planState, codec: 'h264', h264Encoder: 'libx264' }).h264Encoder, 'libx264');
+assert.throws(
+  () => planExport({ state: planState, codec: 'h264', h264Encoder: 'not-real' as never }),
+  /h264Encoder must be h264_nvenc or libx264/,
+);
 assert.throws(() => validateVideoParams({ resolution: '720p' }, 'audio'), /video exports only/);
 assert.throws(() => validateVideoParams({ fps: 60 }, 'audio'), /video exports only/);
 assert.throws(() => validateVideoParams({ resolution: '8k' }, 'video'), /480p, 720p, 1080p, or 4k/);

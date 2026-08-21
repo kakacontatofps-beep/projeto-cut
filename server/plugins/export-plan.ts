@@ -11,6 +11,7 @@ import {
 } from '../../src/export/mediaSettings.ts';
 import { MAX_VIDEO_BITRATE_BPS, MIN_VIDEO_BITRATE_BPS } from '../../src/export/bitrate.ts';
 import { sanitizeFileName } from '../file-name.ts';
+import type { H264Encoder } from '../media-acceleration.ts';
 
 export { EXPORT_FPS_OPTIONS, EXPORT_RESOLUTIONS, exportScale } from '../../src/export/mediaSettings.ts';
 export type { ExportResolution } from '../../src/export/mediaSettings.ts';
@@ -30,6 +31,7 @@ export type ExportRequest = {
   resolution?: ExportResolution;
   fps?: number;
   videoBitrate?: number;
+  h264Encoder?: Extract<H264Encoder, 'h264_nvenc' | 'libx264'>;
 };
 
 export type ExportTimeline = {
@@ -58,6 +60,7 @@ export interface ExportPlan {
   scale: number;
   retimeFps: number | undefined;
   videoBitrate: number | undefined;
+  h264Encoder?: Extract<H264Encoder, 'h264_nvenc' | 'libx264'>;
 }
 
 class ExportRequestError extends Error {}
@@ -167,6 +170,12 @@ export function planExport(body: ExportRequest | null): ExportPlan {
   if (format === 'video' && codec === 'prores' && body?.videoBitrate !== undefined) {
     throw new ExportRequestError('prores mezzanine export does not accept videoBitrate');
   }
+  if (body?.h264Encoder !== undefined) {
+    if (format !== 'video' || codec !== 'h264') throw new ExportRequestError('h264Encoder applies only to H.264 video exports');
+    if (body.h264Encoder !== 'h264_nvenc' && body.h264Encoder !== 'libx264') {
+      throw new ExportRequestError('h264Encoder must be h264_nvenc or libx264');
+    }
+  }
   validateVideoParams(body, format);
   const totalFrames = nestedDuration === undefined
     ? exportDuration(state)
@@ -194,5 +203,6 @@ export function planExport(body: ExportRequest | null): ExportPlan {
     scale: exportScale(state, body?.resolution),
     retimeFps,
     videoBitrate: format === 'video' && codec !== 'prores' ? body?.videoBitrate : undefined,
+    h264Encoder: format === 'video' && codec === 'h264' ? body?.h264Encoder : undefined,
   };
 }

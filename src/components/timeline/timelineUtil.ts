@@ -33,6 +33,9 @@ export const RULER_LABEL_MIN_PX = 52;
 export const TIMELINE_OVERSCAN_PX = 480;
 export const MAX_RULER_TICKS = 190;
 
+const WAVEFORM_CACHE_LIMIT = 384;
+const waveformCache = new Map<string, string>();
+
 export interface TimelineFrameWindow {
   startFrame: number;
   endFrame: number;
@@ -62,6 +65,28 @@ export function timelineFrameWindow(
   const startFrame = Math.max(0, Math.floor((scrollLeft - HEADER_W - overscanPx) / px));
   const endFrame = Math.max(startFrame + 1, Math.ceil((scrollLeft + clientWidth - HEADER_W + overscanPx) / px));
   return { startFrame, endFrame };
+}
+
+/**
+ * Keep the current overscanned render window while the visible viewport still
+ * sits comfortably inside it. Scroll events can fire for every pixel; using
+ * this guard lets React refresh clip rows only when the viewport consumes half
+ * of the overscan instead of rebuilding the timeline on every event.
+ */
+export function timelineViewportFitsWindow(
+  scrollLeft: number,
+  clientWidth: number,
+  pxPerFrame: number,
+  window: TimelineFrameWindow,
+  safetyPx = TIMELINE_OVERSCAN_PX / 2,
+): boolean {
+  const px = Math.max(0.001, pxPerFrame);
+  const viewportStart = Math.max(0, (scrollLeft - HEADER_W) / px);
+  const viewportEnd = Math.max(viewportStart + 1, (scrollLeft + clientWidth - HEADER_W) / px);
+  const safetyFrames = Math.max(0, safetyPx) / px;
+  const safeStart = window.startFrame === 0 ? 0 : window.startFrame + safetyFrames;
+  const safeEnd = window.endFrame - safetyFrames;
+  return viewportStart >= safeStart && viewportEnd <= safeEnd;
 }
 
 export function intersectFrameRange(
@@ -254,6 +279,9 @@ export const SNAP_PX = 7;
 // Generate a stable waveform from clip identity so the
 // same project keeps the same visual shape without decoding audio in React.
 export function waveformPath(seed: string, width: number): string {
+  const cacheKey = `${seed}\0${width.toFixed(2)}`;
+  const cached = waveformCache.get(cacheKey);
+  if (cached !== undefined) return cached;
   let hash = 2166136261;
   for (let i = 0; i < seed.length; i += 1) hash = Math.imul(hash ^ seed.charCodeAt(i), 16777619);
   const count = Math.min(1200, Math.max(24, Math.ceil(width / 2)));
@@ -265,5 +293,11 @@ export function waveformPath(seed: string, width: number): string {
     const x = (i / (count - 1)) * width;
     bars.push(`M${x.toFixed(2)} ${(12 - amplitude).toFixed(2)}V${(12 + amplitude).toFixed(2)}`);
   }
-  return bars.join(' ');
+  const path = bars.join(' ');
+  waveformCache.set(cacheKey, path);
+  if (waveformCache.size > WAVEFORM_CACHE_LIMIT) {
+    const oldest = waveformCache.keys().next().value;
+    if (oldest !== undefined) waveformCache.delete(oldest);
+  }
+  return path;
 }

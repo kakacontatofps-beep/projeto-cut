@@ -20,6 +20,14 @@ const timeline: Timeline = {
     track: 'V1',
     startFrame: 0,
     durationInFrames: 90,
+  }, {
+    id: 'item_visual_2',
+    kind: 'image',
+    name: 'Still 2',
+    src: '/still-2.jpg',
+    track: 'V1',
+    startFrame: 90,
+    durationInFrames: 90,
   }],
   selectedId: null,
   trackOrder: ['V1'],
@@ -52,4 +60,63 @@ assert.equal(added.effect.assetId, 'builtin:fx-rgb-split');
 assert.equal(added.effect.overrides.amount, 0.2);
 assert.equal(added.effects.length, 1);
 
-console.log('effect tool immediate response check passed');
+await execEffectTool('manage_effects', {
+  action: 'add',
+  targetItemId: 'item_visual',
+  assetId: 'builtin:fx-invert',
+}, ctx);
+const inspectedEffects = await execEffectTool('manage_effects', {
+  action: 'inspect',
+  targetItemId: 'item_visual',
+}, ctx) as { effects: Array<{ effectId: string }> };
+assert.equal(inspectedEffects.effects.length, 2);
+const moved = await execEffectTool('manage_effects', {
+  action: 'move',
+  targetItemId: 'item_visual',
+  effectId: inspectedEffects.effects[1]!.effectId,
+  index: 0,
+}, ctx) as { to: number; effects: Array<{ assetId: string }> };
+assert.equal(moved.to, 0);
+assert.equal(moved.effects[0]!.assetId, 'builtin:fx-invert');
+
+const transitionCatalog = await execEffectTool('manage_transitions', {
+  action: 'list',
+}, ctx) as { transitions: { builtIn: Array<{ assetId: string }> } };
+assert.ok(transitionCatalog.transitions.builtIn.some((entry) => entry.assetId === 'builtin:tr-whip-pan'));
+
+const transitionAdd = await execEffectTool('manage_transitions', {
+  action: 'add',
+  assetId: 'whip-pan',
+  incomingItemId: 'item_visual_2',
+  durationInFrames: 24,
+  direction: 'right',
+}, ctx) as { results: Array<{ transition: { id: string } }> };
+assert.ok(transitionAdd.results?.[0]?.transition, JSON.stringify(transitionAdd));
+const transitionId = transitionAdd.results[0]!.transition.id;
+const inspectedTransition = await execEffectTool('manage_transitions', {
+  action: 'inspect',
+  transitionId,
+}, ctx) as { transitions: Array<{ durationInFrames: number; direction: string; enabled: boolean }> };
+assert.equal(inspectedTransition.transitions[0]!.durationInFrames, 24);
+assert.equal(inspectedTransition.transitions[0]!.direction, 'right');
+
+await execEffectTool('manage_transitions', {
+  action: 'update',
+  transitionId,
+  durationInFrames: 18,
+  enabled: false,
+}, ctx);
+const updatedTransition = await execEffectTool('manage_transitions', {
+  action: 'inspect',
+  transitionId,
+}, ctx) as { transitions: Array<{ durationInFrames: number; enabled: boolean }> };
+assert.equal(updatedTransition.transitions[0]!.durationInFrames, 18);
+assert.equal(updatedTransition.transitions[0]!.enabled, false);
+
+await execEffectTool('manage_transitions', { action: 'remove', transitionId }, ctx);
+const removedTransition = await execEffectTool('manage_transitions', {
+  action: 'inspect', transitionId,
+}, ctx) as { transitions: unknown[] };
+assert.equal(removedTransition.transitions.length, 0);
+
+console.log('effect/transition MCP tool checks passed');

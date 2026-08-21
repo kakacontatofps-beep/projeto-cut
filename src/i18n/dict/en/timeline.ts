@@ -177,6 +177,8 @@ export default {
   '切分': 'Split',
   '已应用效果': 'Applied effects',
   '已应用效果（{n}）': 'Applied effects ({n})',
+  '管理已应用效果（{n}）': 'Manage or remove effects ({n})',
+  '没有已应用效果': 'No effects applied',
   '点击移除': 'Click to remove',
   '复制效果': 'Copy effects',
   '粘贴效果': 'Paste effects',

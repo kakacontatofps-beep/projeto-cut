@@ -63,6 +63,9 @@ function recoveryRecord(
     updatedAt: now,
     format,
     codec,
+    ...(context.options.h264EncoderPreference !== 'auto' && context.options.h264EncoderPreference !== undefined
+      ? { h264Encoder: context.options.h264EncoderPreference }
+      : {}),
     base: context.options.base,
     fps: context.options.fps,
     state: context.options.state,
@@ -107,7 +110,7 @@ function submissionBody(
   codec: ExportCodec,
   operationId: string,
 ) {
-  const { state, project, timelineId, base, resolution, fps, requestedVideoBitrate } = context.options;
+  const { state, project, timelineId, base, resolution, fps, requestedVideoBitrate, h264EncoderPreference } = context.options;
   const body: Record<string, unknown> = {
     state, format, codec, name: base, operationId,
     ...(project && timelineId ? { project, timelineId } : {}),
@@ -116,6 +119,7 @@ function submissionBody(
   body.resolution = resolution;
   if (fps !== state.fps) body.fps = fps;
   if (requestedVideoBitrate !== undefined) body.videoBitrate = requestedVideoBitrate;
+  if (codec === 'h264' && h264EncoderPreference && h264EncoderPreference !== 'auto') body.h264Encoder = h264EncoderPreference;
   return body;
 }
 

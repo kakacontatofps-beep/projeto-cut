@@ -2261,7 +2261,7 @@
         "properties": {
           "adds": {
             "type": "array",
-            "description": "effect: {type,targetItemId,assetId,propertyOverrides?}. transition: {type,assetId,incomingItemId,outgoingItemId?,durationInFrames?}. motion-graphic: {type,assetId:library:motion-graphic:*,track?,fromFrame|startFrame?}. audio SFX: {type:\"audio\",assetId:library:sound:*,fromFrame?}. POOL media B-roll (video/image/gif/svg/audio): {type,assetId,track|trackId?,fromFrame|startFrame?,durationInFrames?} — no name/props on pool adds (then update_item_props). Source-window add (video/audio/gif): {type,assetId,sourceStartMs?,sourceEndMs?,sourceStartSeconds?,sourceEndSeconds?,track?,fromFrame?} — pass search_media hit *Ms fields through unchanged; use either milliseconds or seconds for each bound, never both. The tool converts to frames; do NOT combine source windows with durationInFrames/srcInFrame, and do not multiply by fps yourself. Authored text: {type:\"text\",text,name?,track?,fromFrame?,durationInFrames?,fontSize?,color?,fontWeight?,align?}. Authored solid: {type:\"solid\",color?,name?,track?,fromFrame?,durationInFrames?}.",
+            "description": "effect: {type,targetItemId,assetId,propertyOverrides?}. transition: {type,assetId,incomingItemId,outgoingItemId?,durationInFrames?,direction?,enabled?}. motion-graphic: {type,assetId:library:motion-graphic:*,track?,fromFrame|startFrame?}. audio SFX: {type:\"audio\",assetId:library:sound:*,fromFrame?}. POOL media B-roll (video/image/gif/svg/audio): {type,assetId,track|trackId?,fromFrame|startFrame?,durationInFrames?} — no name/props on pool adds (then update_item_props). Source-window add (video/audio/gif): {type,assetId,sourceStartMs?,sourceEndMs?,sourceStartSeconds?,sourceEndSeconds?,track?,fromFrame?} — pass search_media hit *Ms fields through unchanged; use either milliseconds or seconds for each bound, never both. The tool converts to frames; do NOT combine source windows with durationInFrames/srcInFrame, and do not multiply by fps yourself. Authored text: {type:\"text\",text,name?,track?,fromFrame?,durationInFrames?,fontSize?,color?,fontWeight?,align?}. Authored solid: {type:\"solid\",color?,name?,track?,fromFrame?,durationInFrames?}.",
             "items": {
               "type": "object"
             }
@@ -2306,8 +2306,10 @@
             "type": "string",
             "enum": [
               "list",
+              "inspect",
               "add",
               "update",
+              "move",
               "remove"
             ],
             "description": "What to do."
@@ -2327,6 +2329,68 @@
           "propertyOverrides": {
             "type": "object",
             "description": "add/update: sparse patch. Numeric properties use numbers; colors use RGB arrays in 0..1, e.g. {\"color\":[1,0,0]}. Omit for defaults."
+          },
+          "index": {
+            "type": "number",
+            "description": "move: zero-based destination index in the clip effect stack."
+          }
+        },
+        "required": [
+          "action"
+        ]
+      }
+    },
+    {
+      "name": "manage_transitions",
+      "description": "Dedicated transition MCP tool. list returns the built-in/custom GLSL catalog; inspect reports applied transitions; add/update/remove mutate transitions at adjacent clip cuts. Use incomingItemId for the later clip at the cut. Supports duration, direction and enabled state.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list",
+              "inspect",
+              "add",
+              "update",
+              "remove"
+            ],
+            "description": "What to do."
+          },
+          "transitionId": {
+            "type": "string",
+            "description": "Applied transition id or prefix. Required for update/remove; optional filter for inspect."
+          },
+          "incomingItemId": {
+            "type": "string",
+            "description": "add: later clip at an adjacent same-track cut. inspect: optional clip filter."
+          },
+          "outgoingItemId": {
+            "type": "string",
+            "description": "add: optional safety assertion for the earlier adjacent clip."
+          },
+          "assetId": {
+            "type": "string",
+            "description": "add/update transition asset. Accepts builtin:tr-cross-dissolve, a bare built-in type, or custom:tr-* from submit_shader."
+          },
+          "durationInFrames": {
+            "type": "number",
+            "minimum": 2,
+            "description": "Transition duration, clamped to both adjacent clip lengths."
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right",
+              "up",
+              "down"
+            ],
+            "description": "Direction for wipe/whip-style transitions."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable or temporarily bypass the transition."
           }
         },
         "required": [

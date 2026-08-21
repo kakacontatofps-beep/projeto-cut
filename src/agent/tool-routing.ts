@@ -92,7 +92,7 @@ const ROUTING_GROUPS: readonly RoutingGroup[] = [
       '素材库', '模板', '特效', '转场', '动效', '水印',
     ],
     tools: [
-      'list_templates', 'search_templates', 'browse_library', 'manage_effects', 'manage_template',
+      'list_templates', 'search_templates', 'browse_library', 'manage_effects', 'manage_transitions', 'manage_template',
       'update_watermark', 'search_fonts', 'add_motion_graphic', 'create_motion_graphic',
       'submit_motion_graphic', 'create_motion_graphic_from_code',
     ],

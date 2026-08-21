@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { TimelineItem } from '../../editor/types';
 import { filmstripBackground, peaksPath, useClipPreview } from '../../media/clipPreview';
 import type { TimelineFrameWindow } from './timelineUtil';
@@ -59,7 +60,7 @@ function WaveLayer({ geometry, height, path, strip, video }: {
   );
 }
 
-export function ClipMediaLayers({ item, px, fps, height, clipStartFrame, durationInFrames,
+export const ClipMediaLayers = memo(function ClipMediaLayers({ item, px, fps, height, clipStartFrame, durationInFrames,
   srcInFrame, playbackRate, visibleWindow }: {
   item: TimelineItem;
   px: number;
@@ -97,4 +98,4 @@ export function ClipMediaLayers({ item, px, fps, height, clipStartFrame, duratio
       {d && <WaveLayer geometry={geometry} height={waveH} path={d} strip={!!strip} video={isVideo} />}
     </>
   );
-}
+});
