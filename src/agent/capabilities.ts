@@ -147,11 +147,6 @@ function providerSuffix(cap: CapabilityKey, mode: ApprovalMode): string {
 
 // label + the primary tool + a fallback hint when the capability is off.
 const CAP_ROWS: { key: CapabilityKey; label: string; tool: string; fallback: string }[] = [
-  { key: 'image', label: 'Image generation', tool: 'submit_image', fallback: 'use push_asset/import_url_asset for a public image, or ask the user to upload/paste one' },
-  { key: 'voice', label: 'Voice/TTS', tool: 'submit_voice', fallback: 'ask the user to provide and upload/paste audio' },
-  { key: 'video', label: 'Video generation', tool: 'submit_video', fallback: 'use push_asset for a public video, or ask the user to upload one' },
-  { key: 'music', label: 'Music generation', tool: 'submit_music', fallback: 'use list_audio/add_audio from the library, or ask the user to upload audio' },
-  { key: 'sound', label: 'Sound generation', tool: 'submit_sound', fallback: 'use list_audio/add_audio from the sound-effects library' },
   { key: 'stock', label: 'Stock-media search', tool: 'search_stock_media', fallback: 'use push_asset to import a known public URL directly' },
   { key: 'transcription', label: 'Transcription/talking-head editing', tool: 'transcribe_track', fallback: 'word-level deletion, filler cleanup, and automatic captions are unavailable' },
   { key: 'sandbox', label: 'Sandbox execution (ffmpeg/node/python)', tool: 'run_code', fallback: 'skip sandbox steps such as probe_media' },
@@ -172,11 +167,12 @@ export function capabilitiesPrompt(
     if (caps[r.key]) on.push(`${r.label}(${r.tool}${providerSuffix(r.key, mode)})`);
     else off.push(`${r.label} (${r.tool}) — ${r.fallback}`);
   }
-  return `\n\n# Available capabilities (based on configured API keys; local editing is always available without keys)\n`
+  return `\n\n# Available editing capabilities (local editing is always available without keys)\n`
     + `✅ Configured: ${on.length ? on.join(', ') : '(no key-gated capabilities)'}.\n`
     + `⬜ Not configured — do not promise these in a plan or call them; they return "not configured" and waste a turn:\n`
     + (off.length ? off.map((s) => `  - ${s}`).join('\n') : '  (none)')
-    + '\nWhen an unavailable capability is needed, follow its fallback above or tell the user that the capability is not configured'
+    + '\nExternal image, video, voice, music, and sound generation are intentionally disabled in this lightweight editor build.'
+    + '\nWhen an unavailable editing capability is needed, follow its fallback above or tell the user that the capability is not configured'
     + ' (guide them to Settings → the matching capability page to add a provider).'
     + '\nProvider choice: skill files only document per-provider usage details; the actual provider is decided by THIS list'
     + ' and its routing suffix (user default → single provider → ask once in manual mode → pick freely in auto mode).'

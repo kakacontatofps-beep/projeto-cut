@@ -5,18 +5,10 @@
 // Security invariant: the secret field only has a Boolean status, and the value will never be backfilled; the model/routing field is a non-secret configuration,
 // The current value is echoed through the models channel of GET /api/keys (server-side NON_SECRET_NAMES whitelist).
 import { t } from '../../i18n/locale';
-import {
-  LLM_PROVIDER_PRESETS,
-  isLocalLlmProvider,
-  llmProviderConfigNames,
-} from '../../../shared/llm-providers';
+import { isLocalLlmProvider, llmProviderConfigNames } from '../../../shared/llm-providers';
 import type { CodexAgentStatus } from '../../../shared/codex-agent';
-import type { VendorId } from './vendorIcons';
 import {
   directory,
-  modelSelect,
-  modelText,
-  routeSelect,
   secret,
   text,
   type KeyStatusResponse,
@@ -29,7 +21,6 @@ import {
 import {
   ROUTE_NEEDS,
   TRANSCRIPTION_SETTINGS_GROUP,
-  VOICE_SETTINGS_GROUP,
   localAsrPage,
 } from './settingsMediaProviders';
 
@@ -44,54 +35,13 @@ export type {
   SettingsVendorPage,
 } from './settingsFields';
 
-const llmPage = (preset: (typeof LLM_PROVIDER_PRESETS)[number]): SettingsVendorPage => {
-  const names = llmProviderConfigNames(preset.id);
-  return {
-    key: `llm/${preset.id}`,
-    vendor: preset.id as VendorId,
-    title: preset.label,
-    note: preset.id === 'anthropic'
-      ? '内置 Agent 需要 Anthropic API Key。Claude Code 订阅用户请通过「外部 Agent 接入 (MCP)」连接；OpenChatCut 不接收 Claude OAuth。'
-      : '每个厂商独立保存地址、密钥与模型。先测试连接，成功后可从接口返回的模型中选择。',
-    ...(preset.id === 'anthropic'
-      ? { noteAction: { label: '外部 Agent 接入 (MCP)', action: 'open-mcp-guide' } }
-      : {}),
-    fields: [
-      {
-        name: names.baseUrl,
-        label: 'API URL',
-        kind: 'text',
-        defaultLabel: preset.baseUrl,
-        note: '填写完整 API 前缀；可使用官方地址、自建网关或兼容中转。',
-      },
-      secret(names.apiKey, isLocalLlmProvider(preset.id) ? 'API Key（可选）' : 'API Key'),
-      ...(preset.id === 'openai' ? [{
-        name: 'LLM_OPENAI_API_MODE',
-        label: '接口格式',
-        kind: 'select' as const,
-        defaultLabel: 'Responses API（推荐）',
-        note: '选择服务实际支持的协议；OpenAI 使用 Responses API，兼容服务使用 Chat Completions API。',
-        options: [{ value: 'chat', label: 'Chat Completions API' }],
-      }] : []),
-      {
-        name: names.model,
-        label: '模型',
-        kind: 'text',
-        defaultLabel: preset.defaultModel,
-        discoverableModel: true,
-        note: '测试连接后可直接选择接口返回的模型，也可以手动填写模型 ID。',
-        options: [{ value: preset.defaultModel, label: preset.defaultModel }],
-      },
-    ],
-  };
-};
-
 const CODEX_PAGE: SettingsVendorPage = {
   key: 'llm/codex',
   vendor: 'openai',
   title: 'OpenAI · Codex',
   connection: 'codex',
-  note: '使用 ChatGPT 订阅登录，由官方 Codex CLI 管理凭据、续期与退出。OpenChatCut 不会读取或显示 OAuth 凭据。',
+  note: '使用 ChatGPT 订阅登录，由官方 Codex CLI 管理凭据。也可通过 MCP 将 Codex、Gemini 或 Antigravity 连接到 Kaka Cut。',
+  noteAction: { label: '外部 Agent 接入 (MCP)', action: 'open-mcp-guide' },
   fields: [
     {
       name: 'CODEX_MODEL',
@@ -111,157 +61,13 @@ const CODEX_PAGE: SettingsVendorPage = {
   ],
 };
 
-const AGENT_VENDOR_PAGES: readonly SettingsVendorPage[] = LLM_PROVIDER_PRESETS.flatMap((preset) => {
-  const page = llmPage(preset);
-  return preset.id === 'openai' ? [page, CODEX_PAGE] : [page];
-});
-
-// Vision bypass configuration: rendered by VisionModelPane (localStorage, not
-// a server key page). No fields — vendorConfigured stays false for it.
-const VISION_PAGE: SettingsVendorPage = {
-  key: 'llm/vision', vendor: 'vision', title: '视觉理解', fields: [],
-};
-
-// Outbound network proxy: applies to every overseas API the server talks to
-// (Agent models, AI generation, model-pack downloads, R2). Empty = use the
-// HTTPS_PROXY/HTTP_PROXY environment variables (Clash etc.).
-const PROXY_PAGE: SettingsVendorPage = {
-  key: 'agent/proxy', vendor: 'proxy', title: '网络代理', kind: 'settings',
-  note: '国内网络访问海外模型（Gemini / OpenAI / Anthropic / Mistral 等）失败时，'
-    + '可在此填写本地代理地址（如 http://127.0.0.1:7890）。'
-    + '留空则使用系统环境变量（HTTPS_PROXY / HTTP_PROXY）。'
-    + '生效范围：Agent 模型、AI 生成、模型下载、R2 云同步。',
-  fields: [
-    text('PROXY_URL', '代理地址', '例如 http://127.0.0.1:7890'),
-  ],
-};
-
-const AGENT_VENDOR_PAGES_WITH_VISION: readonly SettingsVendorPage[] = [
-  ...AGENT_VENDOR_PAGES,
-  VISION_PAGE,
-];
-
-// MiniMax serves 4 capabilities for the same Key/Base URL pair, and only the model fields of that capability are linked to the capability on the page.
-const MINIMAX_NOTE = 'MiniMax 同一个 Key，配置一次全能力（生图 / 配音 / 视频 / 音乐）通用。';
-const minimaxPage = (cap: string, modelField: SettingsField, title = 'MiniMax', vendor: VendorId = 'minimax'): SettingsVendorPage => ({
-  key: `${cap}/${vendor}`, vendor, title, note: MINIMAX_NOTE,
-  fields: [
-    secret('MINIMAX_API_KEY', 'API Key'),
-    text('MINIMAX_BASE_URL', 'Base URL', '默认 https://api.minimaxi.com'),
-    modelField,
-  ],
-});
-
-// BytePlus ModelArk serves image (Seedream) and video (Seedance) from the same Key/Base URL,
-// separate from LLM_BYTEPLUS_* (Agent chat) — same sharing convention as MiniMax above.
-const BYTEPLUS_NOTE = 'BytePlus ModelArk 同一个 Key，图生 / 视频生成通用；与「Agent 大脑」的 BytePlus 配置各自独立。';
-const byteplusPage = (cap: string, modelField: SettingsField, title = 'BytePlus · ModelArk'): SettingsVendorPage => ({
-  key: `${cap}/byteplus`, vendor: 'byteplus', title, note: BYTEPLUS_NOTE,
-  fields: [
-    secret('BYTEPLUS_API_KEY', 'API Key'),
-    text('BYTEPLUS_BASE_URL', 'Base URL', '默认 https://ark.ap-southeast.bytepluses.com/api/v3'),
-    modelField,
-  ],
-});
-
 export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
   {
     key: 'agent', title: 'Agent 模型', icon: 'sparkles',
     groups: [
       { key: 'llm', title: 'Agent 大脑',
-        hint: '对话与工具调用的核心，未配置无法对话。',
-        vendors: AGENT_VENDOR_PAGES_WITH_VISION },
-    ],
-  },
-  {
-    key: 'proxy', title: '网络代理', icon: 'plug',
-    groups: [
-      { key: 'proxy', title: '网络代理', hint: '统一配置服务端访问海外 API 使用的代理地址。', vendors: [PROXY_PAGE] },
-    ],
-  },
-  {
-    key: 'generation', title: 'AI 生成', icon: 'image',
-    groups: [
-      { key: 'image', title: '生图', hint: 'submit_image · 文生图 / 图生图，任一厂商即可。',
-        route: routeSelect('PREFERRED_IMAGE_VENDOR', [
-          { value: 'gpt-image-2', label: 'OpenAI gpt-image' },
-          { value: 'nano-banana', label: 'Gemini Nano Banana' },
-          { value: 'image-01', label: 'MiniMax' },
-          { value: 'wavespeed', label: 'WaveSpeed' },
-          { value: 'byteplus', label: 'BytePlus · Seedream' },
-        ]),
-        vendors: [
-          { key: 'image/openai', vendor: 'openai', title: 'OpenAI', fields: [
-            secret('IMAGE_API_KEY', 'API Key（gpt-image）'),
-            text('IMAGE_BASE_URL', 'Base URL', '默认 https://api.openai.com'),
-          ] },
-          { key: 'image/gemini', vendor: 'gemini', title: 'Google Gemini', fields: [
-            secret('GEMINI_API_KEY', 'API Key（Nano Banana）'),
-            text('GEMINI_BASE_URL', 'Base URL', '默认 https://generativelanguage.googleapis.com'),
-            modelText('GEMINI_IMAGE_MODEL', '生图模型', 'gemini-3.1-flash-image'),
-          ] },
-          minimaxPage('image', modelSelect('MINIMAX_IMAGE_MODEL', '生图模型', 'image-01', ['image-01', 'image-01-live'])),
-          { key: 'image/wavespeed', vendor: 'wavespeed', title: 'WaveSpeed', fields: [
-            secret('WAVESPEED_API_KEY', 'API Key'),
-            text('WAVESPEED_BASE_URL', 'Base URL', '默认 https://api.wavespeed.ai'),
-            modelText('WAVESPEED_IMAGE_MODEL', '生图模型', 'wavespeed-ai/flux-dev'),
-          ] },
-          byteplusPage('image', modelText('BYTEPLUS_IMAGE_MODEL', '生图模型', 'seedream-4-5-251128',
-            '测试连接后可直接选择接口返回的模型，也可以手动填写模型 ID。', true), 'BytePlus · Seedream'),
-        ] },
-      VOICE_SETTINGS_GROUP,
-      { key: 'video', title: '生视频', hint: 'submit_video · 文 / 图生视频，任一厂商即可。',
-        route: routeSelect('PREFERRED_VIDEO_VENDOR', [
-          { value: 'seedance2', label: 'Seedance' },
-          { value: 'kling', label: '可灵' },
-          { value: 'hailuo', label: 'MiniMax 海螺' },
-          { value: 'byteplus', label: 'BytePlus · Seedance' },
-        ]),
-        vendors: [
-          { key: 'video/seedance', vendor: 'seedance', title: 'Seedance · 火山', fields: [
-            secret('SEEDANCE_API_KEY', 'API Key'),
-            text('SEEDANCE_BASE_URL', 'Base URL', '默认 https://ark.cn-beijing.volces.com/api/v3'),
-            modelText('SEEDANCE_VIDEO_MODEL', '视频模型', 'doubao-seedance-2-0-260128'),
-          ] },
-          { key: 'video/kling', vendor: 'kling', title: '可灵 Kling', fields: [
-            secret('KLING_API_KEY', 'API Key'),
-            text('KLING_BASE_URL', 'Base URL', '默认 https://api-singapore.klingai.com'),
-            modelText('KLING_VIDEO_MODEL', '视频模型', 'kling-v3-omni'),
-          ] },
-          minimaxPage('video', modelSelect('MINIMAX_VIDEO_MODEL', '视频模型', 'MiniMax-Hailuo-02',
-            ['MiniMax-Hailuo-02', 'MiniMax-Hailuo-2.3', 'MiniMax-Hailuo-2.3-Fast', 'S2V-01']), 'MiniMax 海螺', 'hailuo'),
-          byteplusPage('video', modelText('BYTEPLUS_VIDEO_MODEL', '视频模型', 'seedance-1-5-pro-251215',
-            '测试连接后可直接选择接口返回的模型，也可以手动填写模型 ID。', true), 'BytePlus · Seedance'),
-        ] },
-      { key: 'music', title: '生音乐', hint: 'submit_music · 文字 / 成片生成配乐，任一厂商即可。',
-        route: routeSelect('PREFERRED_MUSIC_VENDOR', [
-          { value: 'mureka', label: 'Mureka' },
-          { value: 'minimax', label: 'MiniMax' },
-          { value: 'atlas', label: 'Atlas Cloud' },
-          { value: 'sonilo', label: 'Sonilo' },
-        ]),
-        vendors: [
-          { key: 'music/mureka', vendor: 'mureka', title: 'Mureka', fields: [
-            secret('MUREKA_API_KEY', 'API Key'),
-            text('MUREKA_BASE_URL', 'Base URL', '默认 https://api.mureka.ai'),
-            modelText('MUREKA_MUSIC_MODEL', '音乐模型', 'auto'),
-          ] },
-          minimaxPage('music', modelSelect('MINIMAX_MUSIC_MODEL', '音乐模型', 'music-2.6',
-            ['music-3.0', 'music-2.6', 'music-3.0-free', 'music-2.6-free', 'music-cover', 'music-cover-free'])),
-          { key: 'music/atlas', vendor: 'atlas', title: 'Atlas Cloud', fields: [
-            secret('ATLASCLOUD_API_KEY', 'API Key'),
-            text('ATLASCLOUD_API_BASE', 'Base URL', '默认 https://api.atlascloud.ai/api/v1'),
-            modelSelect('ATLASCLOUD_MUSIC_MODEL', '音乐模型', 'minimax/music-2.6', ['minimax/music-2.6']),
-          ] },
-          { key: 'music/sonilo', vendor: 'sonilo', title: 'Sonilo',
-            note: '按成片生成：把渲染好的视频交给 Sonilo，配乐跟着画面节奏走（可选一句风格提示，不填也行）。'
-              + '配乐自带授权、可商用（以条款为准）；每条音轨附 license_id 留档。'
-              + '同一个 Key 也用于按成片生成音效（submit_sound，免版税）。',
-            fields: [
-              secret('SONILO_API_KEY', 'API Key'),
-              text('SONILO_BASE_URL', 'Base URL', '默认 https://api.sonilo.com'),
-            ] },
-        ] },
+        hint: 'Codex integrado para editar; conexões externas usam a ponte MCP.',
+        vendors: [CODEX_PAGE] },
     ],
   },
   {

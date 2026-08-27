@@ -13,10 +13,8 @@ import {
   applyAgentModelStatus,
   applyCodexAgentStatus,
   getAgentModelSnapshot,
-  selectAgentModel,
 } from './model-selection.ts';
 import { MODEL_CAPABILITY_OVERRIDES_KEY } from '../../shared/model-capabilities.ts';
-import { MODEL, PROVIDER } from './providerConfig.ts';
 
 assert.equal(normalizeLlmProvider('ollama'), 'ollama');
 assert.equal(normalizeLlmProvider('lmstudio'), 'lmstudio');
@@ -39,55 +37,17 @@ for (const name of [
 const llmGroup = SETTINGS_CATEGORIES.flatMap((category) => category.groups)
   .find((group) => group.key === 'llm');
 assert.ok(llmGroup);
-const ollamaPage = llmGroup.vendors.find((page) => page.vendor === 'ollama');
-assert.ok(ollamaPage);
-assert.equal(ollamaPage.fields.find((field) => field.kind === 'secret')?.label, 'API Key（可选）');
+assert.deepEqual(llmGroup.vendors.map((page) => page.connection), ['codex'],
+  'the lightweight settings surface exposes only integrated Codex');
 
 applyAgentModelStatus({}, {});
 assert.deepEqual(getAgentModelSnapshot(), { activeId: '', choices: [], loaded: true });
-assert.equal(vendorConfigured({ keys: {}, caps: {}, models: {} }, ollamaPage), false);
-
-applyAgentModelStatus({}, { LLM_OLLAMA_MODEL: 'llama3.2' });
-assert.deepEqual(
-  getAgentModelSnapshot().choices.map((choice) => [choice.provider, choice.model]),
-  [['ollama', 'llama3.2']],
-);
-assert.equal(vendorConfigured({
-  keys: {},
-  caps: {},
-  models: { LLM_OLLAMA_MODEL: 'llama3.2' },
-}, ollamaPage), true);
-
-applyAgentModelStatus({ LLM_ANTHROPIC_API_KEY: { configured: true } }, {});
-assert.equal(getAgentModelSnapshot().choices[0]?.provider, 'anthropic');
-
-let persistenceCalls = 0;
-const originalFetch = globalThis.fetch;
-globalThis.fetch = (async () => {
-  persistenceCalls += 1;
-  return new Response('{}', { status: 200 });
-}) as typeof fetch;
 applyAgentModelStatus({
   LLM_OPENAI_API_KEY: { configured: true },
   LLM_GEMINI_API_KEY: { configured: true },
-}, { LLM_PROVIDER: 'openai' });
-assert.equal(PROVIDER, 'openai', 'preferred configured provider synchronizes runtime fallback');
-assert.equal(MODEL, 'gpt-5', 'preferred configured model synchronizes runtime fallback');
-const gemini = getAgentModelSnapshot().choices.find((choice) => choice.provider === 'gemini');
-assert.ok(gemini);
-selectAgentModel(gemini.id);
-assert.equal(getAgentModelSnapshot().activeId, gemini.id);
-assert.equal(PROVIDER, 'gemini', 'manual API selection synchronizes runtime metadata');
-applyAgentModelStatus({
-  LLM_OPENAI_API_KEY: { configured: true },
-  LLM_GEMINI_API_KEY: { configured: true },
-}, {
-  LLM_PROVIDER: 'openai',
-  [MODEL_CAPABILITY_OVERRIDES_KEY]: '[]',
-});
-assert.equal(getAgentModelSnapshot().activeId, gemini.id, 'override refresh preserves the active API model');
-assert.equal(PROVIDER, 'gemini', 'refresh synchronizes the preserved API model, not the preferred fallback');
-assert.equal(persistenceCalls, 0, 'conversation model switching must not rewrite server settings');
+}, { LLM_PROVIDER: 'openai', LLM_GEMINI_MODEL: 'gemini-2.5-pro' });
+assert.deepEqual(getAgentModelSnapshot().choices, [],
+  'saved legacy API connections are retained but never loaded as editing models');
 
 const signedInCodex = {
   installed: true,
@@ -99,15 +59,12 @@ applyCodexAgentStatus(signedInCodex, 'gpt-5.4', 'high');
 const codex = getAgentModelSnapshot().choices.find((choice) => choice.backend === 'codex');
 assert.ok(codex);
 assert.equal(codex.reasoningEffort, 'high');
-assert.equal(getAgentModelSnapshot().activeId, gemini.id, 'adding Codex must not replace the active API model');
-selectAgentModel(codex.id);
+assert.equal(getAgentModelSnapshot().activeId, codex.id, 'Codex becomes the only integrated editing model');
 applyAgentModelStatus({
   LLM_OPENAI_API_KEY: { configured: true },
   LLM_GEMINI_API_KEY: { configured: true },
 }, { LLM_PROVIDER: 'openai' });
 assert.equal(getAgentModelSnapshot().activeId, codex.id, 'key refresh must preserve an active Codex model');
-assert.equal(PROVIDER, 'openai', 'Codex-active refresh synchronizes a valid API fallback');
-assert.equal(MODEL, 'gpt-5');
 applyAgentModelStatus({
   LLM_OPENAI_API_KEY: { configured: true },
 }, {
@@ -148,6 +105,4 @@ assert.equal(vendorConfigured(null, codexPage, {
   ...signedInCodex,
   account: { type: 'apiKey', email: null, planType: null },
 }), false);
-globalThis.fetch = originalFetch;
-
 console.log('local model verification passed');

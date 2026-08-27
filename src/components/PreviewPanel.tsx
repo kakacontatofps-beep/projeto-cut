@@ -39,8 +39,22 @@ import { PreviewTransformOverlay } from './preview/PreviewTransformOverlay';
 import { fitPreviewCanvasSize, type PreviewCanvasSize } from './preview/previewCanvasGeometry';
 
 const MEDIA_LOADING_NOTICE_DELAY_MS = 160;
+const HOVER_PREVIEW_DELAY_MS = 140;
 
 const PREVIEW_SOURCE_CYCLE: readonly PreviewSourceMode[] = ['auto', 'original', 'proxy'];
+
+function useSettledHoverFrame(frame: number | null): number | null {
+  const [settled, setSettled] = useState<number | null>(null);
+  useEffect(() => {
+    if (frame === null) {
+      setSettled(null);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setSettled(frame), HOVER_PREVIEW_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [frame]);
+  return settled;
+}
 
 function previewStatusKey(status: Pick<SelectedPreviewStatus, 'kind' | 'targetId'>): string {
   return `${status.kind}\u0000${status.targetId}`;
@@ -115,6 +129,7 @@ export const PreviewPanel = memo(function PreviewPanel({
   hoverPreviewFrame = null,
 }: PreviewPanelProps) {
   const t = useT();
+  const settledHoverPreviewFrame = useSettledHoverFrame(hoverPreviewFrame);
   const renderProject = useMemo<ProjectDoc>(() => ({
     ...project,
     timelines: project.timelines.map((timeline) => timeline.id === timelineId
@@ -370,12 +385,12 @@ export const PreviewPanel = memo(function PreviewPanel({
               // No loop: playback stops at the final frame (editor convention).
               // Restart by pressing play again.
             />
-            {!fullscreen && hoverPreviewFrame !== null && (
+            {!fullscreen && settledHoverPreviewFrame !== null && (
               <div className="cc-preview-hover-frame" aria-label={t('时间线悬停预览')}>
                 <Thumbnail
                   component={TimelineComposition}
                   inputProps={thumbnailInputProps}
-                  frameToDisplay={hoverPreviewFrame}
+                  frameToDisplay={settledHoverPreviewFrame}
                   durationInFrames={duration}
                   fps={state.fps}
                   compositionWidth={state.width}

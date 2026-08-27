@@ -9,12 +9,12 @@ export const CORE_TOOL_SCHEMAS: AgentToolSchema[] = [
   },
   {
     name: 'list_templates',
-    description: 'Discover motion-graphic templates. With no args: returns the category list with counts. With a category: returns the template names in it. There are ~211 templates, so prefer a category or search_templates instead of listing everything.',
+    description: 'Discover the lean Kaka Cut motion-graphic catalog. With no args: returns categories with counts. With a category: returns the template names in it.',
     input_schema: { type: 'object', properties: { category: { type: 'string', description: 'Optional category to list (e.g. "title-cards", "lower-thirds").' } } },
   },
   {
     name: 'search_templates',
-    description: 'Fuzzy-search templates by name/category keyword. Use this to find a specific template among the ~211.',
+    description: 'Fuzzy-search the Kaka Cut documentary, social, and community presets by name/category keyword.',
     input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
   },
   {

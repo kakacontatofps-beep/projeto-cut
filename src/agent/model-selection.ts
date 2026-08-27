@@ -1,11 +1,6 @@
 import type { CodexAgentModel, CodexAgentStatus } from '../../shared/codex-agent';
 import { loadAgentModelPref, saveAgentModelPref } from '../persist/sessionPrefs';
 import {
-  LLM_PROVIDER_PRESETS,
-  defaultModelForProvider,
-  isLocalLlmProvider,
-  llmProviderConfigNames,
-  normalizeLlmProvider,
   type LlmProvider,
   type OpenAiApiMode,
 } from '../../shared/llm-providers';
@@ -17,7 +12,6 @@ import {
   type ModelCapabilityOverride,
   type ModelIdentity,
 } from '../../shared/model-capabilities';
-import { setLlmConfig } from './providerConfig';
 
 interface KeyStateLike {
   readonly configured: boolean;
@@ -64,13 +58,7 @@ function commitChoices(
   choices: readonly AgentModelChoice[],
   activeId: string,
   loaded = snapshot.loaded,
-  fallbackApi?: AgentModelChoice,
 ): void {
-  const active = choices.find((choice) => choice.id === activeId);
-  const runtimeApi = active?.backend === 'api' ? active : fallbackApi;
-  if (runtimeApi) {
-    setLlmConfig(runtimeApi.provider, runtimeApi.model, runtimeApi.openAiApiMode);
-  }
   commit(choices, activeId, loaded);
 }
 
@@ -83,35 +71,12 @@ function modelCapabilities(identity: ModelIdentity): ModelCapabilities {
 }
 
 function apiChoices(
-  keys: Record<string, KeyStateLike>,
-  models: Record<string, string>,
+  _keys: Record<string, KeyStateLike>,
+  _models: Record<string, string>,
 ): readonly AgentModelChoice[] {
-  return LLM_PROVIDER_PRESETS.flatMap((preset): AgentModelChoice[] => {
-    const names = llmProviderConfigNames(preset.id);
-    const savedModel = models[names.model]?.trim() ?? '';
-    if (isLocalLlmProvider(preset.id) ? !savedModel : !keys[names.apiKey]?.configured) return [];
-    const model = savedModel || defaultModelForProvider(preset.id);
-    const identity: ModelIdentity = { backend: 'api', provider: preset.id, modelId: model };
-    return [{
-      id: `${preset.id}:${model}`,
-      backend: 'api',
-      provider: preset.id,
-      providerLabel: preset.label,
-      model,
-      ...(preset.id === 'openai'
-        ? { openAiApiMode: models.LLM_OPENAI_API_MODE === 'chat' ? 'chat' : 'responses' }
-        : {}),
-      capabilities: modelCapabilities(identity),
-    }];
-  });
-}
-
-function chooseInitialApiId(
-  choices: readonly AgentModelChoice[],
-  models: Record<string, string>,
-): string {
-  const preferred = normalizeLlmProvider(models.LLM_PROVIDER);
-  return choices.find((choice) => choice.provider === preferred)?.id ?? choices[0]?.id ?? '';
+  // Legacy API credentials stay stored for backwards compatibility, but this
+  // lightweight Kaka Cut build only loads the newest Codex/MCP editing path.
+  return [];
 }
 
 function allChoices(): readonly AgentModelChoice[] {
@@ -153,12 +118,10 @@ export function applyAgentModelStatus(
   codexSavedReasoningEffort = models.CODEX_REASONING_EFFORT?.trim() ?? codexSavedReasoningEffort;
   rebuildCodexChoices();
   const choices = allChoices();
-  const initialApiId = chooseInitialApiId(apiModelChoices, models);
   const preferred = loadAgentModelPref();
   const preserved = choices.some((choice) => choice.id === snapshot.activeId) ? snapshot.activeId
     : choices.some((choice) => choice.id === preferred) ? preferred : '';
-  commitChoices(choices, preserved || initialApiId || choices[0]?.id || '', true,
-    apiModelChoices.find((choice) => choice.id === initialApiId));
+  commitChoices(choices, preserved || choices[0]?.id || '', true);
 }
 
 function selectedReasoningEffort(requested: string | undefined, capabilities: ModelCapabilities): string {

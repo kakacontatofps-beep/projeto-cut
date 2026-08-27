@@ -14,7 +14,7 @@ O Kaka Cut combina uma timeline multifaixa com montagem automática de episódio
 - legendas, marcadores, transições, zoom lento, fades e ducking;
 - timeline multifaixa com altura e zoom ajustáveis;
 - projetos e arquivos mantidos localmente;
-- recursos de IA opcionais, sem impedir a edição manual;
+- comandos de edição com Codex integrado ou agentes externos via MCP;
 - 13 presets comunitários compatíveis, adaptados de React Video Editor e Onda;
 - integração MCP com Codex, Gemini, Antigravity, Claude Code e Cursor.
 
@@ -42,6 +42,19 @@ Exemplos de ordens:
 - “Crie textos dinâmicos usando o SRT secundário da faixa C2, sem alterar a C1.”
 - “Troque todas as transições da faixa V1 por dissoluções suaves de 12 quadros.”
 - “Use o preset Onda · Citação Documental nas três frases mais importantes.”
+
+## Modo leve
+
+Esta versão prioriza computadores com menos memória e processamento:
+
+- abre um projeto novo vazio, sem cenas demonstrativas pesadas;
+- carrega somente 37 presets selecionados, em vez da galeria legada completa;
+- usa arquivos proxy na prévia por padrão, mantendo os originais intactos para a exportação;
+- estabiliza a prévia ao passar o mouse pela timeline para evitar renderizações a cada movimento;
+- não carrega conexões antigas nem módulos externos de geração de imagem, vídeo, voz, música ou som;
+- mantém somente Codex e a ponte MCP para comandos de edição.
+
+Projetos antigos e mídias já importadas ou geradas continuam abrindo normalmente. Nenhum arquivo existente é apagado.
 
 ## Desenvolvimento
 

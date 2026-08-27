@@ -9,7 +9,15 @@ import { parseSkillFrontmatter, type SkillFront } from './skill-frontmatter';
 // Vite raw-imports every file under skills/ (SKILL.md + references/examples/scripts).
 const RAW = (typeof import.meta.env === 'undefined'
   ? {}
-  : import.meta.glob('./*/**/*', {
+    : import.meta.glob([
+      './*/**/*',
+      '!./ai-cinematic-short-film/**/*',
+      '!./image-gen/**/*',
+      '!./music/**/*',
+      '!./video-gen/**/*',
+      '!./video-thumbnail-generator/**/*',
+      '!./voice/**/*',
+    ], {
       query: '?raw',
       import: 'default',
       eager: true,

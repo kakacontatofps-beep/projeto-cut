@@ -8,10 +8,11 @@ import type { RefItem } from './ChatComposer.tsx';
 
 for (const template of TEMPLATES) {
   const alreadyChinese = /[\u3400-\u9fff]/.test(template.name);
+  const kakaCutPreset = /^(RVE|Onda) · /.test(template.name);
   assert.equal(
-    alreadyChinese || tData(template.name) !== template.name,
+    alreadyChinese || kakaCutPreset || tData(template.name) !== template.name,
     true,
-    `built-in MG template is missing a Chinese display name: ${template.name}`,
+    `built-in MG template is missing a localized display name: ${template.name}`,
   );
 }
 

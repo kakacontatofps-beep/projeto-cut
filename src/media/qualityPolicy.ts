@@ -44,9 +44,9 @@ function readPreviewSourceInitial(): PreviewSourceMode {
     const raw = localStorage.getItem(PREVIEW_SOURCE_KEY);
     if (raw === 'auto' || raw === 'original' || raw === 'proxy') return raw;
   } catch { /* private mode */ }
-  // Default to original: do not auto-generate preview proxies in the background.
-  // Users can opt in per session via the preview-quality control (proxy / auto).
-  return 'original';
+  // Kaka Cut targets smooth editing on modest PCs. Masters stay untouched and
+  // exports still use them; only the interactive preview defaults to a proxy.
+  return 'proxy';
 }
 
 function emit(): void {

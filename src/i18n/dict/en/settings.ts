@@ -6,6 +6,9 @@ export default {
   '检查中…': 'Checking…',
   // ── SettingsDialog shell ──
   '设置 · API 密钥': 'Settings · API Keys',
+  '设置 · Kaka Cut': 'Settings · Kaka Cut',
+  'Codex integrado para editar; conexões externas usam a ponte MCP.': 'Integrated Codex for editing; external connections use the MCP bridge.',
+  '使用 ChatGPT 订阅登录，由官方 Codex CLI 管理凭据。也可通过 MCP 将 Codex、Gemini 或 Antigravity 连接到 Kaka Cut。': 'Sign in with your ChatGPT subscription; the official Codex CLI manages credentials. You can also connect Codex, Gemini, or Antigravity to Kaka Cut through MCP.',
   '关闭': 'Close',
   '收起': 'Collapse',
   '展开': 'Expand',

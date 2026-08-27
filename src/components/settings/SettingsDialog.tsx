@@ -271,7 +271,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         <header style={head}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: theme.accent, display: 'inline-flex' }}><Icon name="sliders" size={15} /></span>
-            <b style={{ fontSize: 14 }}>{t('设置 · API 密钥')}</b>
+            <b style={{ fontSize: 14 }}>{t('设置 · Kaka Cut')}</b>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <SettingsVersionControl

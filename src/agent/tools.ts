@@ -9,7 +9,7 @@ import { TIMELINE_TOOL_NAMES, TIMELINE_TOOL_SCHEMAS } from './tools/schemas/time
 import { SCRIPT_TOOL_NAMES, SCRIPT_TOOL_SCHEMAS } from './tools/schemas/script-tools';
 import { FRAMES_TOOL_NAMES, FRAMES_TOOL_SCHEMAS } from './tools/schemas/frames-tool';
 import { SCENE_DETECTION_TOOL_NAMES, SCENE_DETECTION_TOOL_SCHEMAS } from './tools/schemas/scene-detection-tools';
-import { GENERATE_TOOL_NAMES, GENERATE_TOOL_SCHEMAS } from './tools/generate-schemas';
+import { GENERATE_TOOL_SCHEMAS } from './tools/generate-schemas';
 import { EFFECT_TOOL_NAMES, EFFECT_TOOL_SCHEMAS } from './tools/schemas/effect-tools';
 import { LIBRARY_TOOL_NAMES, LIBRARY_TOOL_SCHEMAS } from './tools/schemas/library-tools';
 import { EDIT_ITEM_TOOL_NAMES, EDIT_ITEM_TOOL_SCHEMAS } from './tools/schemas/edit-item-tools';
@@ -69,6 +69,14 @@ import {
   AGENT_RUNTIME_TOOL_SCHEMAS,
 } from './tools/schemas/agent-runtime-tools';
 
+const DISABLED_GENERATION_TOOL_NAMES = new Set([
+  'submit_image', 'submit_voice', 'submit_sound', 'submit_music', 'submit_video', 'rerun_generation',
+]);
+const EDITING_GENERATE_TOOL_SCHEMAS = GENERATE_TOOL_SCHEMAS.filter(
+  (tool) => !DISABLED_GENERATION_TOOL_NAMES.has(tool.name),
+);
+const EDITING_GENERATE_TOOL_NAMES = new Set(EDITING_GENERATE_TOOL_SCHEMAS.map((tool) => tool.name));
+
 // Canonical tool definitions (name / description / JSON input_schema). Each one
 // executes against the EditorCore command layer (tool == command). Vercel AI SDK
 // adapts this existing JSON-schema catalog to the selected model provider.
@@ -89,9 +97,9 @@ export const TOOL_SCHEMAS: AgentToolSchema[] = [
   ...FRAMES_TOOL_SCHEMAS,
   // Local FFmpeg scene detection: report cut points or atomically generate markers and batch cuts.
   ...SCENE_DETECTION_TOOL_SCHEMAS,
-  // AI generation tools from generate-tools.ts: submit_image/video/voice/music/sound.
+  // Lean editing build: keep export/progress, but omit external media generation.
   // track_progress also accepts target=transcription for upload-and-transcribe readiness.
-  ...withProgressTargets(GENERATE_TOOL_SCHEMAS),
+  ...withProgressTargets(EDITING_GENERATE_TOOL_SCHEMAS),
   // browse_library → edit_item provides unified discovery and application for fx/lut/zoom/transition/sound.
   ...LIBRARY_TOOL_SCHEMAS,
   ...EDIT_ITEM_TOOL_SCHEMAS,
@@ -221,7 +229,7 @@ const EXECUTOR_GROUPS: ReadonlyArray<readonly [ReadonlySet<string>, ToolExecutor
   [SCRIPT_TOOL_NAMES, async () => (await import('./tools/script-tools')).execScriptTool],
   [FRAMES_TOOL_NAMES, async () => (await import('./tools/frames-tool')).execFramesTool],
   [SCENE_DETECTION_TOOL_NAMES, async () => (await import('./tools/scene-detection-tools')).execSceneDetectionTool],
-  [GENERATE_TOOL_NAMES, async () => (await import('./tools/generate-tools')).execGenerateTool],
+  [EDITING_GENERATE_TOOL_NAMES, async () => (await import('./tools/generate-tools')).execGenerateTool],
   [LIBRARY_TOOL_NAMES, async () => (await import('./tools/library-tools')).execLibraryTool],
   [EDIT_ITEM_TOOL_NAMES, async () => (await import('./tools/edit-item-tools')).execEditItemTool],
   [EFFECT_TOOL_NAMES, async () => (await import('./tools/effect-tools')).execEffectTool],

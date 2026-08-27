@@ -42,21 +42,6 @@ export const CREATIVE_SKILL_METADATA: CreativeSkillMetadata[] = [
     ]
   },
   {
-    id: '11111111-1240-4000-8000-000000000005',
-    slug: 'ai-cinematic-short-film',
-    name: 'AI Cinematic Short Film',
-    nameZh: 'AI 电影感短片',
-    summary: '规划并制作 AI 电影感短片，覆盖故事、镜头、提示词、连续性和最终检查。',
-    scenarios: [
-      'ai-film',
-      'cinematic',
-      'seedance',
-      'story',
-      'short-film',
-      'video-generation'
-    ]
-  },
-  {
     id: '11111111-1240-4000-8000-000000000006',
     slug: 'product-ad-video-script',
     name: 'Product Ad Video Script',
@@ -114,21 +99,6 @@ export const CREATIVE_SKILL_METADATA: CreativeSkillMetadata[] = [
       'shot-analysis',
       'shot-breakdown',
       'storyboard'
-    ]
-  },
-  {
-    id: '11111111-1240-4000-8000-000000000010',
-    slug: 'video-thumbnail-generator',
-    name: 'Video Thumbnail Generator',
-    nameZh: '视频封面生成',
-    summary: '基于视频内容和真实画面生成适合平台的封面图。',
-    scenarios: [
-      'bilibili-cover',
-      'cover-image',
-      'poster',
-      'shorts-cover',
-      'thumbnail',
-      'video-cover'
     ]
   },
   {
