@@ -14,17 +14,32 @@ function snippets(endpoint: string, token: string): Snippet[] {
   return [
     {
       label: 'Claude Code',
-      code: `claude mcp add --transport http -H "Authorization: Bearer ${token}" openchatcut ${endpoint}`,
+      code: `claude mcp add --transport http -H "Authorization: Bearer ${token}" kaka-cut ${endpoint}`,
     },
     {
-      label: 'Codex',
-      code: `export OPENCHATCUT_MCP_TOKEN='${token}'\\ncodex mcp add openchatcut --url ${endpoint} --bearer-token-env-var OPENCHATCUT_MCP_TOKEN`,
+      label: 'Codex · PowerShell',
+      code: `$env:OPENCHATCUT_MCP_TOKEN='${token}'\ncodex mcp add kaka-cut --url ${endpoint} --bearer-token-env-var OPENCHATCUT_MCP_TOKEN`,
+    },
+    {
+      label: 'Gemini CLI',
+      code: `gemini mcp add --transport http --header "Authorization: Bearer ${token}" kaka-cut ${endpoint}`,
+    },
+    {
+      label: 'Antigravity (.agents/mcp_config.json)',
+      code: JSON.stringify({
+        mcpServers: {
+          'kaka-cut': {
+            serverUrl: endpoint,
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        },
+      }, null, 2),
     },
     {
       label: 'Cursor (~/.cursor/mcp.json)',
       code: JSON.stringify({
         mcpServers: {
-          openchatcut: {
+          'kaka-cut': {
             type: 'http',
             url: endpoint,
             headers: { Authorization: `Bearer ${token}` },
@@ -83,7 +98,7 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
     <div className="cc-modal-backdrop" onPointerDown={onClose}>
       <div
         className="cc-modal"
-        style={{ width: 560, gap: 10, maxHeight: 'calc(100vh - 64px)', overflowY: 'auto' }}
+        style={{ width: 660, gap: 10, maxHeight: 'calc(100vh - 64px)', overflowY: 'auto' }}
         onPointerDown={(event) => event.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}>
@@ -92,7 +107,11 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
           <button type="button" onClick={onClose} style={{ marginLeft: 'auto', padding: '3px 9px' }}>{t('关闭')}</button>
         </div>
         <div style={{ color: theme.textMuted, fontSize: 12, lineHeight: 1.55 }}>
-          {t('OpenChatCut 暴露一个 Streamable HTTP MCP 端点。Claude Code / Codex / Cursor 等外部 Agent 接入后,与内置 Agent 共用同一套编辑工具,可直接读写当前工程。')}
+          {t('Kaka Cut 暴露一个 Streamable HTTP MCP 端点。Codex、Gemini、Antigravity、Claude Code 和 Cursor 接入后,与内置 Agent 共用同一套编辑工具,可直接读写当前工程。')}
+        </div>
+
+        <div style={{ color: theme.textMuted, fontSize: 12, lineHeight: 1.55, padding: '8px 10px', borderRadius: 6, background: theme.hover }}>
+          {t('连接后可直接下达自然语言命令，例如：“根据 C2 次字幕轨创建动态文字”或“把 V1 所有剪切点改成柔和叠化”。Kaka Cut 必须保持打开；执行修改前仍会遵守 Agent 的审核模式。')}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

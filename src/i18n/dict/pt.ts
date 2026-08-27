@@ -19,6 +19,8 @@ export const PT: Record<string, string> = {
   '设置 · API 密钥': 'Configurações · chaves de API',
   '数据存储': 'Armazenamento',
   '外部 Agent 接入 (MCP)': 'Agente externo (MCP)',
+  'Kaka Cut 暴露一个 Streamable HTTP MCP 端点。Codex、Gemini、Antigravity、Claude Code 和 Cursor 接入后,与内置 Agent 共用同一套编辑工具,可直接读写当前工程。': 'O Kaka Cut oferece um endpoint MCP por HTTP com streaming. Codex, Gemini, Antigravity, Claude Code e Cursor podem usar as mesmas ferramentas do agente integrado para ler e editar o projeto atual.',
+  '连接后可直接下达自然语言命令，例如：“根据 C2 次字幕轨创建动态文字”或“把 V1 所有剪切点改成柔和叠化”。Kaka Cut 必须保持打开；执行修改前仍会遵守 Agent 的审核模式。': 'Depois de conectar, você pode dar ordens em linguagem natural, como “crie textos dinâmicos usando o SRT secundário C2” ou “troque todos os cortes da V1 por transições suaves”. O Kaka Cut precisa permanecer aberto e as alterações continuam respeitando o modo de revisão do agente.',
   '编辑快捷键': 'Atalhos do editor',
   '切换界面语言': 'Alterar idioma',
   '重命名': 'Renomear',

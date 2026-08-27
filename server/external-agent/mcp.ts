@@ -251,11 +251,11 @@ async function activateMcpResult(
 
 function makeServer(baseUrl: string, session: McpSession): Server {
   const server = new Server(
-    { name: 'openchatcut', version: '1.0.0' },
+    { name: 'kaka-cut', version: '1.0.0' },
     {
       capabilities: { tools: { listChanged: true }, prompts: {} },
       instructions: [
-        `OpenChatCut external skill baseline: ${OPENCHATCUT_SKILL_BASELINE}. Update with npx skills update openchatcut when the installed skill is older.`,
+        `Kaka Cut uses the OpenChatCut-compatible external skill baseline: ${OPENCHATCUT_SKILL_BASELINE}. Update with npx skills update openchatcut when the installed skill is older.`,
         'Bind this MCP transport with target_project before editing. A connected browser is preferred; an existing stored project can use the offline fallback when no browser owns it.',
         'The target response and openchatcut_status report bindingMode. Offline bindings expose only server-direct data tools and require approvalMode="auto".',
         session.exposure.mode === 'progressive'

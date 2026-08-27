@@ -2,6 +2,7 @@ import templatesJson from '../../assets/templates/openchatcut-templates.json';
 import socialShortsJson from '../../assets/templates/social-shorts-templates.json';
 import kouboScenesJson from '../../assets/templates/koubo-scenes-templates.json';
 import type { Tpl } from '../types';
+import { COMMUNITY_PRESETS } from './community-presets';
 import type { TimelineState } from './types';
 
 // The template library + the first-run seed project. Shared by the loader shell
@@ -13,6 +14,7 @@ export const TEMPLATES = [
   ...(templatesJson as Tpl[]),
   ...(socialShortsJson as Tpl[]),
   ...(kouboScenesJson as Tpl[]),
+  ...COMMUNITY_PRESETS,
 ];
 
 const pick = (name: string): Tpl => TEMPLATES.find((t) => t.name.includes(name)) ?? TEMPLATES[0];

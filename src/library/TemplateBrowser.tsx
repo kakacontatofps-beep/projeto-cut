@@ -38,6 +38,8 @@ const CAT_LABEL: Record<string, string> = {
   'social-media': '社交媒体',
   'social-shorts': '竖屏自媒体',
   'koubo-scenes': '口播场景',
+  'rve-presets': 'RVE · Presets',
+  'onda-presets': 'Onda · Presets',
   插件: '插件',
   扩展: '扩展',
   uncategorized: '未分类',

@@ -347,6 +347,10 @@ export default {
   '外部 Agent 接入 (MCP)': 'External agents (MCP)',
   'OpenChatCut 暴露一个 Streamable HTTP MCP 端点。Claude Code / Codex / Cursor 等外部 Agent 接入后,与内置 Agent 共用同一套编辑工具,可直接读写当前工程。':
     'OpenChatCut exposes a Streamable HTTP MCP endpoint. External agents such as Claude Code, Codex, and Cursor share the same editing tools as the built-in agent and can read and edit the current project directly.',
+  'Kaka Cut 暴露一个 Streamable HTTP MCP 端点。Codex、Gemini、Antigravity、Claude Code 和 Cursor 接入后,与内置 Agent 共用同一套编辑工具,可直接读写当前工程。':
+    'Kaka Cut exposes a Streamable HTTP MCP endpoint. Codex, Gemini, Antigravity, Claude Code, and Cursor share the same editing tools as the built-in agent and can read and edit the current project directly.',
+  '连接后可直接下达自然语言命令，例如：“根据 C2 次字幕轨创建动态文字”或“把 V1 所有剪切点改成柔和叠化”。Kaka Cut 必须保持打开；执行修改前仍会遵守 Agent 的审核模式。':
+    'Once connected, use natural-language commands such as “create animated text from the secondary C2 subtitle track” or “change every V1 cut to a soft dissolve.” Kaka Cut must remain open, and edits continue to follow the agent review mode.',
   '端点地址': 'Endpoint',
   '内置 Agent 与外部 MCP': 'Built-in Agent vs external MCP',
   '内置 Agent 会先生成可预览的修改提案，由你应用或拒绝；外部 MCP 使用独立编辑会话，manual 模式等待审核，auto 模式在 review 时直接应用。两者都只通过 EditorCore 命令修改工程。':

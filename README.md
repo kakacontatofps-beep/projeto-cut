@@ -15,7 +15,8 @@ O Kaka Cut combina uma timeline multifaixa com montagem automática de episódio
 - timeline multifaixa com altura e zoom ajustáveis;
 - projetos e arquivos mantidos localmente;
 - recursos de IA opcionais, sem impedir a edição manual;
-- integração MCP para automação futura.
+- 13 presets comunitários compatíveis, adaptados de React Video Editor e Onda;
+- integração MCP com Codex, Gemini, Antigravity, Claude Code e Cursor.
 
 ## Abrir no Windows
 
@@ -29,6 +30,18 @@ versão mais recente do código. Se houver algum problema, consulte
 diagnóstico técnico.
 
 No aplicativo, clique em **Novo projeto**, escolha a pasta do episódio e use **Montar episódio** para revisar o SRT antes de criar a timeline.
+
+## Presets e comandos por IA
+
+Na biblioteca de motion graphics, use as categorias **RVE · Presets** e **Onda · Presets**. Todos os textos, cores e valores principais podem ser alterados no inspetor. Os créditos e as licenças estão em [THIRD_PARTY_PRESETS.md](THIRD_PARTY_PRESETS.md).
+
+Para controlar o editor com outro agente, mantenha o Kaka Cut aberto e acesse **Configurações → Agente externo (MCP)**. A tela oferece comandos prontos para Codex e Gemini CLI, além dos arquivos JSON para Antigravity e Cursor. O token é local e não deve ser publicado no Git.
+
+Exemplos de ordens:
+
+- “Crie textos dinâmicos usando o SRT secundário da faixa C2, sem alterar a C1.”
+- “Troque todas as transições da faixa V1 por dissoluções suaves de 12 quadros.”
+- “Use o preset Onda · Citação Documental nas três frases mais importantes.”
 
 ## Desenvolvimento
 
