@@ -180,7 +180,7 @@ The playhead line/triangle is pointerEvents:none, click it to click the ruler - 
                   )}
                 </TrackHead>
                 {meta.kind === 'caption' ? <CaptionTrackLane state={state} captions={trackCaptions} trackId={trackId}
-                  playheadFrame={playheadRef.current} px={px} rowHeight={rowHeightOf(trackId)} locked={locked} hidden={hidden} snapping={snapping}
+                  playheadFrame={playheadRef.current} px={px} rowHeight={rowHeightOf(trackId)} visibleWindow={visibleWindow} locked={locked} hidden={hidden} snapping={snapping}
                   trackFromClientY={trackFromClientY}
                   selectedCaptions={selectedCaptions} selectedItemIds={selectedIdsOf(state)}
                   selectionMovePreview={activeSelectionMovePreview}

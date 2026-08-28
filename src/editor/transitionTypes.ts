@@ -21,7 +21,12 @@ export type GlslTransitionType =
   | 'circle-wipe'
   | 'radial-blur'
   | 'glitch-cut'
-  | 'dip-to-color';
+  | 'dip-to-color'
+  | 'slide-push'
+  | 'smooth-zoom'
+  | 'spin-zoom'
+  | 'film-burn'
+  | 'pixel-dissolve';
 
 /** Audio-only transitions (preset `trAudioCrossFade`) — no picture. */
 export type AudioTransitionType = 'audio-cross-fade';
@@ -35,6 +40,7 @@ export const GLSL_TRANSITION_TYPES: ReadonlySet<string> = new Set<string>([
   'cross-dissolve', 'dip-to-black', 'soft-wipe', 'whip-pan', 'flash', 'luma-blend',
   'page-curl', 'rack-focus', 'organic-dissolve', 'impact-shake', 'anticipation-zoom', 'clean-line-wipe',
   'circle-wipe', 'radial-blur', 'glitch-cut', 'dip-to-color',
+  'slide-push', 'smooth-zoom', 'spin-zoom', 'film-burn', 'pixel-dissolve',
   'custom-shader', // takes the GL render path; frag comes from the item, not GLSL_TRANSITIONS
 ]);
 
@@ -73,6 +79,11 @@ export const TRANSITION_LABELS: Record<TransitionType, string> = {
   'radial-blur': '径向模糊转场',
   'glitch-cut': '故障切换转场',
   'dip-to-color': '闪色转场',
+  'slide-push': '平滑推拉转场',
+  'smooth-zoom': '柔和缩放转场',
+  'spin-zoom': '旋转缩放转场',
+  'film-burn': '胶片灼烧转场',
+  'pixel-dissolve': '像素溶解转场',
   /** preset.name.trAudioCrossFade */
   'audio-cross-fade': '音频交叉淡化',
   /** submit_shader-generated custom transition (per-item label in customLabel) */
@@ -97,6 +108,11 @@ export const TRANSITION_ORDER: readonly GlslTransitionType[] = [
   'radial-blur',
   'glitch-cut',
   'dip-to-color',
+  'slide-push',
+  'smooth-zoom',
+  'spin-zoom',
+  'film-burn',
+  'pixel-dissolve',
 ];
 
 /** Audio transition catalog (trAudioCrossFade). */

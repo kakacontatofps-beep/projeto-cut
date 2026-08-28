@@ -20,6 +20,11 @@ import circleWipe from './shaders/circle-wipe.frag?raw';
 import radialBlur from './shaders/radial-blur.frag?raw';
 import glitchCut from './shaders/glitch-cut.frag?raw';
 import dipToColor from './shaders/dip-to-color.frag?raw';
+import slidePush from './shaders/slide-push.frag?raw';
+import smoothZoom from './shaders/smooth-zoom.frag?raw';
+import spinZoom from './shaders/spin-zoom.frag?raw';
+import filmBurn from './shaders/film-burn.frag?raw';
+import pixelDissolve from './shaders/pixel-dissolve.frag?raw';
 
 export interface GlslTransitionDef {
   frag: string;
@@ -135,5 +140,27 @@ export const GLSL_TRANSITIONS: Record<GlslTransitionType, GlslTransitionDef> = {
       // short hold so PREVIEW_PROGRESS (~0.42) still shows outgoing + color blend
       u_hold: 0.12,
     }),
+  },
+  'slide-push': {
+    frag: slidePush,
+    uniforms: ({ direction }) => ({
+      u_dir: direction === 'right' ? [-1, 0] : direction === 'up' ? [0, -1] : direction === 'down' ? [0, 1] : [1, 0],
+    }),
+  },
+  'smooth-zoom': {
+    frag: smoothZoom,
+    uniforms: () => ({ u_zoom: 0.28 }),
+  },
+  'spin-zoom': {
+    frag: spinZoom,
+    uniforms: () => ({ u_rotation: 0.22, u_zoom: 0.22 }),
+  },
+  'film-burn': {
+    frag: filmBurn,
+    uniforms: () => ({ u_intensity: 1.15, u_burnColor: [1.0, 0.31, 0.06] }),
+  },
+  'pixel-dissolve': {
+    frag: pixelDissolve,
+    uniforms: () => ({ u_blocks: 46, u_softness: 0.06 }),
   },
 };

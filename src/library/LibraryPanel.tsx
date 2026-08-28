@@ -68,6 +68,7 @@ const FX_CATEGORY_IDS: Record<Exclude<FxCategory, 'all'>, ReadonlySet<string>> =
   utility: new Set([
     'builtin:fx-luma-key', 'builtin:fx-local-mosaic', 'builtin:fx-magnify',
     'builtin:fx-rect-mask', 'builtin:fx-circle-mask', 'builtin:fx-chroma-key',
+    'builtin:fx-spotlight',
   ]),
   color: new Set([
     'builtin:fx-color-wheels', 'builtin:fx-levels', 'builtin:fx-highlights-shadows',
@@ -78,12 +79,14 @@ const FX_CATEGORY_IDS: Record<Exclude<FxCategory, 'all'>, ReadonlySet<string>> =
     'builtin:fx-shake', 'builtin:fx-tilt-shift', 'builtin:fx-vignette',
     'builtin:fx-film-grain', 'builtin:fx-bloom', 'builtin:fx-soft-blur',
     'builtin:fx-light-leak', 'builtin:fx-motion-blur',
+    'builtin:fx-letterbox', 'builtin:fx-prism',
   ]),
   creative: new Set([
     'builtin:fx-crt', 'builtin:fx-ascii-rain', 'builtin:fx-rgb-split',
     'builtin:fx-glitch', 'builtin:fx-pixelate', 'builtin:fx-posterize',
     'builtin:fx-mirror', 'builtin:fx-fisheye', 'builtin:fx-kaleidoscope',
     'builtin:fx-edge-glow', 'builtin:fx-halftone',
+    'builtin:fx-vhs',
   ]),
 };
 
@@ -296,7 +299,7 @@ export function LibraryPanel({ semanticScopeId, templates, onAddTemplate, onAddA
       {extensionOpen ? (
         <ExtensionCenter onClose={() => setExtensionOpen(false)} />
       ) : isCaptions ? (
-        <CaptionsPanel playerRef={playerRef} fps={fps} items={items} captionTracks={captionTracks} onSetCaptions={onSetCaptions} onUpdateCaptions={onUpdateCaptions} />
+        <CaptionsPanel playerRef={playerRef} fps={fps} items={items} captionTracks={captionTracks} onSetCaptions={onSetCaptions} onUpdateCaptions={onUpdateCaptions} onCreateCaptionTrack={onCreateCaptionTrack} />
       ) : isTranscript ? (
         <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, borderTop: `0.5px solid ${theme.border}` }}>
           <TranscriptPanel playerRef={playerRef} fps={fps} items={items} trackOptions={trackOptions} onSetItemTranscript={onSetItemTranscript} onToggleWord={onToggleWord} onCleanScript={onCleanScript} onSetGapCap={onSetGapCap} onSetTranscriptPlayOrder={onSetTranscriptPlayOrder} onReorderTrackItems={onReorderTrackItems} onClearEdits={onClearEdits} onImportSrt={(file) => { void importSrt(file); }} onOpenCaptionStyles={openCaptionStyles} />

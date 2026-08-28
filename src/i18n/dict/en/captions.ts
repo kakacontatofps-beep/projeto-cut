@@ -7,6 +7,9 @@ export default {
   '双击编辑字幕': 'Double-click to edit caption',
   '文A': 'Aa',
   '字': 'A',
+  '导入独立的第二个 SRT，用于大字、关键词和重点提示': 'Import a separate second SRT for large words, keywords, and callouts',
+  '重点 SRT': 'Highlight SRT',
+  '导入中…': 'Importing…',
   // Caption style name (styles.ts labelZh, 21 items)
   '简洁白字': 'Clean White',
   '影院白字': 'Cinema White',

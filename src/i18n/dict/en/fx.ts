@@ -31,6 +31,10 @@ export default {
   '反色': 'Invert',
   '半色调网点': 'Halftone',
   '运动模糊': 'Motion Blur',
+  '宽银幕遮幅': 'Cinematic Letterbox',
+  '聚光突出主体': 'Subject Spotlight',
+  '棱镜色散': 'Prism Dispersion',
+  'VHS 录像带': 'VHS Tape',
   // ── FX descs ──
   '把黑色背景变透明、保留亮部，像 Screen 混合——叠加火焰/烟雾/漏光/粒子等黑底素材。':
     'Turns black backgrounds transparent while keeping highlights, like a Screen blend — for overlaying fire/smoke/light-leak/particle footage shot on black.',
@@ -72,6 +76,10 @@ export default {
   'RGB 反相，负片/故障风格。': 'RGB inversion — negative/glitch style.',
   '印刷网点/漫画圆点风格。': 'Print halftone / comic-dot style.',
   '定向拖影，表现速度感。': 'Directional smearing to convey speed.',
+  '添加可调节的电影宽银幕黑边，轻量且适合纪录片画面。': 'Adds adjustable cinematic bars with lightweight processing, ideal for documentary footage.',
+  '压暗主体周围并轻微提亮中心，适合突出人物、物品或画面细节。': 'Darkens the surroundings and gently lifts the center to emphasize a person, object, or detail.',
+  '从画面边缘产生柔和 RGB 色散，适合梦境、回忆和强调镜头。': 'Creates soft RGB dispersion from the edges for dreams, memories, and emphasis shots.',
+  '轻量录像带质感：横向波动、扫描线、噪点与 RGB 偏移。': 'Lightweight tape look with horizontal wobble, scanlines, noise, and RGB offset.',
   // ── LUT names ──
   '青橙电影感': 'Teal & Orange',
   '黑白胶片': 'B&W Film',
@@ -157,6 +165,10 @@ export default {
   '分片': 'Segments',
   '模糊量': 'Blur Amount',
   '角度': 'Angle',
+  '遮幅大小': 'Bar Size',
+  '边缘柔和': 'Edge Softness',
+  '色散量': 'Dispersion Amount',
+  '边缘范围': 'Edge Falloff',
   '色调': 'Tint',
   '网点大小': 'Dot Size',
   '颗粒': 'Grain',

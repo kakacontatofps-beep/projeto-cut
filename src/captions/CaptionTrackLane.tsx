@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { captionPages } from './exportCaptions';
 import { captionTrackEntries, timelineTrackIds, trackKind, type TimelineState, type TrackId } from '../editor/types';
 import {
@@ -39,6 +39,8 @@ import {
 } from './captionTimelineClipboard';
 import { translateLines } from './translate';
 import { droppedFiles, hasExternalFiles } from '../media/externalFileDrop';
+import type { TimelineFrameWindow } from '../components/timeline/timelineUtil';
+import { visibleCaptionPages } from './captionTimelineWindow';
 
 const SNAP_PX = 8;
 
@@ -462,7 +464,7 @@ function CaptionCueBlock({
 }
 
 export function CaptionTrackLane({
-  state, captions, trackId, playheadFrame, px, rowHeight, hidden, locked, snapping, trackFromClientY,
+  state, captions, trackId, playheadFrame, px, rowHeight, visibleWindow, hidden, locked, snapping, trackFromClientY,
   selectedCaptions: controlledSelectedCaptions, selectedItemIds = [], selectionMovePreview = null,
   onSelectCaption, onSelectionMovePreview = () => {}, onMoveTimelineSelection = () => {},
   onUpdate, onMove, onDelete, onCopyCue, onPasteCue, onSeedChat,
@@ -470,6 +472,7 @@ export function CaptionTrackLane({
   onDropExternalFiles, frameFromClientX, onTrackContextMenu,
 }: {
   state: TimelineState; captions: CaptionsData | null; trackId: TrackId; playheadFrame: number; px: number;
+  visibleWindow: TimelineFrameWindow;
   hidden: boolean; locked: boolean; snapping: boolean; rowHeight: number; trackFromClientY: (clientY: number) => TrackId;
   selectedCaptions?: CaptionSelectionRef[];
   selectedItemIds?: readonly string[];
@@ -532,8 +535,19 @@ export function CaptionTrackLane({
     window.addEventListener('pointerdown', closeMenu);
     return () => window.removeEventListener('pointerdown', closeMenu);
   }, [menu]);
-  const pages = captions ? captionPages(captions, state.items, state.fps) : [];
-  const targets = manualCueTargets(captions);
+  const pages = useMemo(
+    () => captions ? captionPages(captions, state.items, state.fps) : [],
+    [captions, state.items, state.fps],
+  );
+  const targets = useMemo(() => manualCueTargets(captions), [captions]);
+  const pinnedRanges = useMemo(() => selectedCaptions.flatMap((selection) => {
+    const resolved = resolveCaptionSelection(state, selection)?.target.cue;
+    return resolved ? [{ start: resolved.start, end: resolved.end }] : [];
+  }), [selectedCaptions, state]);
+  const renderedPages = useMemo(
+    () => visibleCaptionPages(pages, state.fps, visibleWindow, pinnedRanges),
+    [pages, pinnedRanges, state.fps, visibleWindow],
+  );
   const trim = useCaptionTrim({ state, captions, trackId, playheadFrame, px, snapping, locked, onUpdate });
   const move = useCaptionMove({
     state, trackId, playheadFrame, px, snapping, locked, trackFromClientY, onMove,
@@ -651,7 +665,7 @@ export function CaptionTrackLane({
         onTrackContextMenu({ trackId, x: event.clientX, y: event.clientY, frame: frameFromClientX(event.clientX) });
       }}>
       {!pages.length && <span className="cc-caption-track-empty">{t('字幕轨道为空')}</span>}
-      {pages.map((page, index) => {
+      {renderedPages.map(({ page, index }) => {
         const target = page.words.length === 1 && page.words[0]?.id ? targets.get(page.words[0].id) : undefined;
         const cueId = target ? page.words[0]?.id : undefined;
         const key = target ? `${target.laneId}:${cueId ?? 'unresolved'}` : `${page.start}:${index}`;

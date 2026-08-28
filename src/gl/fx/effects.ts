@@ -49,6 +49,10 @@ import sepiaFrag from './sepia.frag?raw';
 import invertFrag from './invert.frag?raw';
 import halftoneFrag from './halftone.frag?raw';
 import motionBlurFrag from './motion-blur.frag?raw';
+import letterboxFrag from './letterbox.frag?raw';
+import spotlightFrag from './spotlight.frag?raw';
+import prismFrag from './prism.frag?raw';
+import vhsFrag from './vhs.frag?raw';
 import type { FxDef, SerializableFxDef } from './uniforms';
 import type { FxPass } from '../runtime';
 
@@ -459,6 +463,51 @@ export const FX_EFFECTS: Record<string, FxDef> = {
       { key: 'angle', label: '方向', default: 0, min: 0, max: 6.2832, step: 0.05 },
     ],
   },
+  'builtin:fx-letterbox': {
+    id: 'builtin:fx-letterbox',
+    name: '宽银幕遮幅',
+    desc: '添加可调节的电影宽银幕黑边，轻量且适合纪录片画面。',
+    frag: letterboxFrag,
+    props: [
+      { key: 'size', label: '遮幅大小', default: 0.105, min: 0, max: 0.25, step: 0.005 },
+      { key: 'softness', label: '边缘柔和', default: 0.002, min: 0.0001, max: 0.04, step: 0.001 },
+    ],
+  },
+  'builtin:fx-spotlight': {
+    id: 'builtin:fx-spotlight',
+    name: '聚光突出主体',
+    desc: '压暗主体周围并轻微提亮中心，适合突出人物、物品或画面细节。',
+    frag: spotlightFrag,
+    props: [
+      { key: 'center_x', label: '中心 X', default: 0.5, min: 0, max: 1, step: 0.01 },
+      { key: 'center_y', label: '中心 Y', default: 0.5, min: 0, max: 1, step: 0.01 },
+      { key: 'radius', label: '半径', default: 0.28, min: 0.05, max: 1, step: 0.01 },
+      { key: 'feather', label: '柔和', default: 0.25, min: 0.01, max: 0.8, step: 0.01 },
+      { key: 'strength', label: '强度', default: 0.38, min: 0, max: 0.9, step: 0.01 },
+    ],
+  },
+  'builtin:fx-prism': {
+    id: 'builtin:fx-prism',
+    name: '棱镜色散',
+    desc: '从画面边缘产生柔和 RGB 色散，适合梦境、回忆和强调镜头。',
+    frag: prismFrag,
+    props: [
+      { key: 'amount', label: '色散量', default: 0.012, min: 0, max: 0.06, step: 0.001 },
+      { key: 'angle', label: '方向', default: 0, min: 0, max: 6.2832, step: 0.05 },
+      { key: 'falloff', label: '边缘范围', default: 1.7, min: 0.2, max: 4, step: 0.1 },
+    ],
+  },
+  'builtin:fx-vhs': {
+    id: 'builtin:fx-vhs',
+    name: 'VHS 录像带',
+    desc: '轻量录像带质感：横向波动、扫描线、噪点与 RGB 偏移。',
+    frag: vhsFrag,
+    props: [
+      { key: 'intensity', label: '强度', default: 0.75, min: 0, max: 2, step: 0.05 },
+      { key: 'scanlines', label: '扫描线', default: 0.55, min: 0, max: 1, step: 0.01 },
+      { key: 'noise', label: '噪点', default: 0.055, min: 0, max: 0.25, step: 0.005 },
+    ],
+  },
 };
 
 /** Core library order first, followed by extended effects. */
@@ -496,6 +545,10 @@ export const FX_ORDER = [
   'builtin:fx-invert',
   'builtin:fx-halftone',
   'builtin:fx-motion-blur',
+  'builtin:fx-letterbox',
+  'builtin:fx-spotlight',
+  'builtin:fx-prism',
+  'builtin:fx-vhs',
 ] as const;
 
 export const FX_IDS = [
