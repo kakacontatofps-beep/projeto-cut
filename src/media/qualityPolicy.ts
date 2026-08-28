@@ -44,9 +44,9 @@ function readPreviewSourceInitial(): PreviewSourceMode {
     const raw = localStorage.getItem(PREVIEW_SOURCE_KEY);
     if (raw === 'auto' || raw === 'original' || raw === 'proxy') return raw;
   } catch { /* private mode */ }
-  // Kaka Cut targets smooth editing on modest PCs. Masters stay untouched and
-  // exports still use them; only the interactive preview defaults to a proxy.
-  return 'proxy';
+  // Keep project opening/import instant. Proxies remain available as an
+  // explicit choice or as a fallback after the original fails to play.
+  return 'original';
 }
 
 function emit(): void {
@@ -100,7 +100,7 @@ export function qualityPolicy(mode: QualityMode = current): QualityPolicy {
     mode: 'balanced',
     allowOptimizeOnIngest: false,
     normalizeOnlyForCompatibility: true,
-    previewPreferMaster: false,
+    previewPreferMaster: true,
     allowPreviewProxyFallback: true,
     defaultExportResolution: 'source',
     defaultBitrateMode: 'auto',

@@ -91,7 +91,9 @@ function VideoPoster({ src, name }: { src?: string; name: string }) {
 }
 
 function AssetPreview({ asset, fps, active, onLoadError, onLoadSuccess }: AssetPreviewProps) {
-  const preview = usePreviewMediaSource(asset.kind === 'video' ? asset.src : undefined);
+  // A card requests poster/proxy work only while the user is interacting with
+  // it. Inactive cards stay cheap, which matters for projects with 200+ clips.
+  const preview = usePreviewMediaSource(asset.kind === 'video' ? asset.src : undefined, active);
   if (asset.kind === 'image' || asset.kind === 'gif' || asset.kind === 'svg') {
     return <img src={asset.src} alt={asset.name} draggable={false} onError={() => onLoadError(asset.id)} onLoad={() => onLoadSuccess(asset.id)} />;
   }

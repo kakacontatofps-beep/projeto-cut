@@ -1,4 +1,6 @@
-const DEFAULT_DERIVATIVE_CONCURRENCY = 2;
+// One background FFmpeg derivative at a time keeps playback responsive on
+// modest CPUs. Users can still raise this explicitly through the env setting.
+const DEFAULT_DERIVATIVE_CONCURRENCY = 1;
 export const MAX_DERIVATIVE_CONCURRENCY = 4;
 
 export type DerivativeWork<T> = (signal: AbortSignal) => Promise<T>;

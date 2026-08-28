@@ -1,6 +1,5 @@
 import { useCallback, useEffect } from 'react';
 import type { AgentReference } from '../agent/context';
-import { enqueueVisualAnalysis, refreshVisualAnalysis } from '../agent/progress/visual-analysis-jobs';
 import { appendManualLane, identifyManualCues, isManualCaptionEntry, newManualCaptions } from '../captions/manualCaptions';
 import { placeMediaAssets, reflowPlacedMediaItems } from '../editor/mediaAssetPlacement';
 import { sourceRevisionOf } from '../editor/mediaSourceRevision';
@@ -137,7 +136,6 @@ function poolImportHooks(run: PoolImportRun, onProgress?: (ratio: number) => voi
       run.commands.relinkMediaAsset(ready.id, mediaAssetRelinkPatch(ready));
       const start = run.transcriptionGate.ready(ready);
       if (start && shouldAutoTranscribeIngest()) run.startAssetTranscription(start.asset, start.asrPath);
-      if (ready.kind !== 'audio') refreshVisualAnalysis(ready);
     },
   };
 }
@@ -255,7 +253,6 @@ function timelineImportHooks(batch: DropBatch, context: DropContext, placeholder
     },
     onReady: (asset) => {
       context.commands.relinkMediaAsset(asset.id, mediaAssetRelinkPatch(asset));
-      if (asset.kind !== 'audio') refreshVisualAnalysis(asset);
       updatePlacedAsset(batch, asset, context);
     },
   };
@@ -390,7 +387,6 @@ function usePoolImports(options: EditorMediaIngestOptions, start: StartAssetTran
     const autoTranscribe = shouldTranscribe(asset.kind) && shouldAutoTranscribeIngest();
     commands.addAsset(autoTranscribe ? { ...asset, transcribeStatus: 'running' } : asset);
     if (autoTranscribe) start(asset);
-    if (asset.kind !== 'audio') enqueueVisualAnalysis(asset);
   }, [commands, start]);
   const importMobileUpload = useCallback(async (record: MobileUploadRecord) => {
     ingestToPool(await importUploadedMedia(record, stateRef.current.fps));

@@ -158,18 +158,18 @@ function useQualitySnapshot() {
   return { mode, preview };
 }
 
-function useProxySources(sources: readonly string[]): number {
+function useProxySources(sources: readonly string[], eager = true): number {
   const [revision, setRevision] = useState(0);
   const quality = useQualitySnapshot();
   useEffect(() => {
     const bump = () => setRevision((value) => value + 1);
     const unsubscribe = subscribe(sources, bump);
     // Only fetch proxies when policy/source mode expects them.
-    if (shouldAutoRequestPreviewProxy(quality.mode, quality.preview)) {
+    if (eager && shouldAutoRequestPreviewProxy(quality.mode, quality.preview)) {
       for (const src of sources) void requestPreviewProxy(src, quality.preview === 'proxy');
     }
     return unsubscribe;
-  }, [sources, quality.mode, quality.preview]);
+  }, [sources, eager, quality.mode, quality.preview]);
   // Re-resolve preview src when quality/preview-source mode flips even if proxy cache is quiet.
   useEffect(() => {
     setRevision((value) => value + 1);
@@ -204,20 +204,23 @@ export function usePreviewTimelineState(state: TimelineState) {
   const sources = useMemo(() => [...new Set(state.items
     .filter((item) => item.kind === 'video' && isPreviewable(item.src))
     .map((item) => item.src!))].sort(), [state.items]);
-  const revision = useProxySources(sources);
+  // Timeline/project hooks only consume already-cached proxies. Building every
+  // proxy while an SRT episode is being assembled can launch hundreds of
+  // FFmpeg jobs before the user presses Play.
+  const revision = useProxySources(sources, false);
   const previewState = useMemo<TimelineState>(() => {
     void revision; // recompute when the proxy cache bumps (proxies live in module state)
     return {
       ...state,
       items: state.items.map((item) => {
         if (item.kind !== 'video' || !item.src) return item;
-        const proxy = stateFor(item.src, shouldAutoRequestPreviewProxy());
+        const proxy = stateFor(item.src, false);
         const previewSrc = resolvePreviewSrc(item.src, proxy);
         return previewSrc && previewSrc !== item.src ? { ...item, src: previewSrc } : item;
       }),
     };
   }, [state, revision]);
-  const proxies = sources.map((src) => ({ src, proxy: stateFor(src, shouldAutoRequestPreviewProxy()) }));
+  const proxies = sources.map((src) => ({ src, proxy: stateFor(src, false) }));
   return {
     state: previewState,
     proxies,
@@ -234,7 +237,7 @@ export function usePreviewProjectDoc(project: ProjectDoc, timelineId: string) {
     .flatMap((timeline) => timeline.items)
     .filter((item) => item.kind === 'video' && isPreviewable(item.src))
     .map((item) => item.src!))].sort(), [project.timelines, reachable]);
-  const revision = useProxySources(sources);
+  const revision = useProxySources(sources, false);
   const previewProject = useMemo<ProjectDoc>(() => {
     void revision; // recompute when the proxy cache bumps (proxies live in module state)
     return {
@@ -243,7 +246,7 @@ export function usePreviewProjectDoc(project: ProjectDoc, timelineId: string) {
         ...timeline,
         items: timeline.items.map((item) => {
           if (item.kind !== 'video' || !item.src) return item;
-          const proxy = stateFor(item.src, shouldAutoRequestPreviewProxy());
+          const proxy = stateFor(item.src, false);
           const previewSrc = resolvePreviewSrc(item.src, proxy);
           return previewSrc && previewSrc !== item.src ? { ...item, src: previewSrc } : item;
         }),
@@ -255,7 +258,7 @@ export function usePreviewProjectDoc(project: ProjectDoc, timelineId: string) {
     project: previewProject,
     state,
     plan,
-    proxies: sources.map((src) => ({ src, proxy: stateFor(src, shouldAutoRequestPreviewProxy()) })),
+    proxies: sources.map((src) => ({ src, proxy: stateFor(src, false) })),
     requestFallback: (src: string) => { reportPreviewPlaybackFailure(src); },
   };
 }

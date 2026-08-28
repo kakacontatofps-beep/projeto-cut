@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { PlayerRef } from '@remotion/player';
-import { enqueueVisualAnalysis } from '../agent/progress/visual-analysis-jobs';
 import { useT } from '../i18n/locale';
 import { pendingAutosaveAfterObservation, recoverFailedAutosave } from '../persist/autosaveRecovery';
 import { acknowledgeIngestedGenerationResults, resumeOpenGenerationJobs } from '../persist/jobRegistryStore';
@@ -140,7 +139,6 @@ function useGenerationJobResume(
           if (!alive) return;
           if ((docRef.current.assets ?? []).some((candidate) => candidate.id === asset.id || candidate.src === asset.src)) return;
           commands.addAsset(asset);
-          if (asset.kind !== 'audio') enqueueVisualAnalysis(asset);
         },
         timeoutSeconds: 180,
       });

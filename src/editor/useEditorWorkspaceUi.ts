@@ -11,7 +11,6 @@ import {
 } from 'react';
 import type { PlayerRef } from '@remotion/player';
 import type { AgentReference } from '../agent/context';
-import { refreshVisualAnalysis } from '../agent/progress/visual-analysis-jobs';
 import {
   createExportJobStore,
   type ExportJobStore,
@@ -25,8 +24,7 @@ import { useEditorActions } from '../shortcuts/useEditorActions';
 import type { TimelineShortcutApi } from '../shortcuts/timelineApi';
 import type { Tpl } from '../types';
 import type { EditorCommands } from './store';
-import { revisionAfterRelink } from './mediaSourceRevision';
-import type { MediaAsset, MediaAssetRelinkPatch, ProjectDoc } from './types';
+import type { MediaAssetRelinkPatch, ProjectDoc } from './types';
 
 export interface EditorChatSeed {
   text: string;
@@ -156,27 +154,6 @@ function useExportJobs(projectId: string, t: typeof translate): [ExportJobStore,
   return [exportJobs, activeExportJobs];
 }
 
-function relinkedAsset(current: MediaAsset, next: MediaAssetRelinkPatch): MediaAsset {
-  const replacement: MediaAsset = {
-    ...current,
-    src: next.src,
-    name: next.name ?? current.name,
-    durationInFrames: next.durationInFrames ?? current.durationInFrames,
-    width: next.width ?? current.width,
-    height: next.height ?? current.height,
-    kind: next.kind ?? current.kind,
-    sourceRevision: next.sourceRevision,
-    sourceContentHash: 'sourceContentHash' in next ? next.sourceContentHash : current.sourceContentHash,
-    sourceSize: next.sourceSize,
-    sourceModifiedAt: next.sourceModifiedAt,
-    sourceFilename: 'sourceFilename' in next ? next.sourceFilename : current.sourceFilename,
-    originalFilePath: 'originalFilePath' in next ? next.originalFilePath : current.originalFilePath,
-    sourceTimecode: undefined,
-    captureClock: undefined,
-  };
-  return { ...replacement, sourceRevision: revisionAfterRelink(current, replacement) };
-}
-
 export function useEditorWorkspaceExportActions(
   input: EditorWorkspaceExportActionsInput,
 ): EditorWorkspaceExportActions {
@@ -203,11 +180,7 @@ export function useEditorWorkspaceExportActions(
     selectAll: input.selectAllTimelineContent,
   });
   const relinkMediaAsset = useCallback((id: string, next: MediaAssetRelinkPatch) => {
-    const current = input.docRef.current.assets.find((asset) => asset.id === id);
     input.commands.relinkMediaAsset(id, next);
-    if (!current) return;
-    const replacement = relinkedAsset(current, next);
-    if (replacement.kind !== 'audio') refreshVisualAnalysis(replacement);
-  }, [input.commands, input.docRef]);
+  }, [input.commands]);
   return { exportJobs, activeExportJobs, exportOpen, setExportOpen, onExport, relinkMediaAsset };
 }

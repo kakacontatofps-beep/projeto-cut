@@ -10,7 +10,7 @@ import {
 assert.equal(qualityPolicy('master').allowOptimizeOnIngest, false);
 assert.equal(qualityPolicy('master').previewPreferMaster, true);
 assert.equal(qualityPolicy('master').defaultBitrateMode, 'high');
-assert.equal(qualityPolicy('balanced').previewPreferMaster, false);
+assert.equal(qualityPolicy('balanced').previewPreferMaster, true);
 assert.equal(qualityPolicy('balanced').defaultBitrateMode, 'auto');
 
 assert.equal(exportResolutionForCanvas({ width: 3840, height: 2160 }, 'master'), '4k');
@@ -25,11 +25,11 @@ assert.equal(exportResolutionForCanvas({ width: 854, height: 480 }, 'balanced'),
 assert.equal(defaultBitrateModeForQuality('master'), 'high');
 assert.equal(defaultBitrateModeForQuality('balanced'), 'auto');
 assert.equal(shouldAutoRequestPreviewProxy('master', 'auto'), false);
-assert.equal(shouldAutoRequestPreviewProxy('balanced', 'auto'), true);
+assert.equal(shouldAutoRequestPreviewProxy('balanced', 'auto'), false);
 assert.equal(shouldAutoRequestPreviewProxy('master', 'proxy'), true);
 assert.equal(shouldAutoRequestPreviewProxy('balanced', 'original'), false);
 assert.equal(shouldPreferMasterPreview('master', 'auto'), true);
-assert.equal(shouldPreferMasterPreview('balanced', 'auto'), false);
+assert.equal(shouldPreferMasterPreview('balanced', 'auto'), true);
 assert.equal(shouldPreferMasterPreview('balanced', 'original'), true);
 assert.equal(shouldPreferMasterPreview('master', 'proxy'), false);
 
