@@ -354,6 +354,18 @@ export default {
     'Kaka Cut exposes a Streamable HTTP MCP endpoint. Codex, Gemini, Antigravity, Claude Code, and Cursor share the same editing tools as the built-in agent and can read and edit the current project directly.',
   '连接后可直接下达自然语言命令，例如：“根据 C2 次字幕轨创建动态文字”或“把 V1 所有剪切点改成柔和叠化”。Kaka Cut 必须保持打开；执行修改前仍会遵守 Agent 的审核模式。':
     'Once connected, use natural-language commands such as “create animated text from the secondary C2 subtitle track” or “change every V1 cut to a soft dissolve.” Kaka Cut must remain open, and edits continue to follow the agent review mode.',
+  '主要连接器': 'Primary connectors',
+  '其他兼容连接器': 'Other compatible connectors',
+  '本机安全连接': 'Protected local connection',
+  '准备连接': 'Ready to connect',
+  '下载配置': 'Download configuration',
+  '使用 ChatGPT 订阅连接 Codex；凭据由官方 Codex 客户端管理，Kaka Cut 只保存本机 MCP 令牌。':
+    'Connect Codex with your ChatGPT subscription. The official client manages your account; Kaka Cut stores only the local MCP token.',
+  '下载或复制配置到工作区的 .agents/mcp_config.json，然后在 Antigravity 的 MCP 管理器中刷新。':
+    'Download or copy the configuration to .agents/mcp_config.json in the workspace, then refresh MCP servers in Antigravity.',
+  '通过 Streamable HTTP 连接 Claude Code。': 'Connect Claude Code over Streamable HTTP.',
+  '通过 Streamable HTTP 连接 Gemini CLI。': 'Connect Gemini CLI over Streamable HTTP.',
+  '复制配置到 Cursor 的 MCP 文件。': 'Copy the configuration to the Cursor MCP file.',
   '端点地址': 'Endpoint',
   '内置 Agent 与外部 MCP': 'Built-in Agent vs external MCP',
   '内置 Agent 会先生成可预览的修改提案，由你应用或拒绝；外部 MCP 使用独立编辑会话，manual 模式等待审核，auto 模式在 review 时直接应用。两者都只通过 EditorCore 命令修改工程。':

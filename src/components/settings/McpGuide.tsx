@@ -6,26 +6,25 @@ import { useT } from '../../i18n/locale';
 import { Icon } from '../icons';
 
 interface Snippet {
+  id: 'codex' | 'antigravity' | 'claude' | 'gemini' | 'cursor';
   label: string;
+  description: string;
   code: string;
+  fileName?: string;
 }
 
 function snippets(endpoint: string, token: string): Snippet[] {
   return [
     {
-      label: 'Claude Code',
-      code: `claude mcp add --transport http -H "Authorization: Bearer ${token}" kaka-cut ${endpoint}`,
-    },
-    {
-      label: 'Codex · PowerShell',
+      id: 'codex',
+      label: 'Codex',
+      description: '使用 ChatGPT 订阅连接 Codex；凭据由官方 Codex 客户端管理，Kaka Cut 只保存本机 MCP 令牌。',
       code: `$env:OPENCHATCUT_MCP_TOKEN='${token}'\ncodex mcp add kaka-cut --url ${endpoint} --bearer-token-env-var OPENCHATCUT_MCP_TOKEN`,
     },
     {
-      label: 'Gemini CLI',
-      code: `gemini mcp add --transport http --header "Authorization: Bearer ${token}" kaka-cut ${endpoint}`,
-    },
-    {
+      id: 'antigravity',
       label: 'Antigravity (.agents/mcp_config.json)',
+      description: '下载或复制配置到工作区的 .agents/mcp_config.json，然后在 Antigravity 的 MCP 管理器中刷新。',
       code: JSON.stringify({
         mcpServers: {
           'kaka-cut': {
@@ -34,9 +33,24 @@ function snippets(endpoint: string, token: string): Snippet[] {
           },
         },
       }, null, 2),
+      fileName: 'mcp_config.json',
     },
     {
+      id: 'claude',
+      label: 'Claude Code',
+      description: '通过 Streamable HTTP 连接 Claude Code。',
+      code: `claude mcp add --transport http -H "Authorization: Bearer ${token}" kaka-cut ${endpoint}`,
+    },
+    {
+      id: 'gemini',
+      label: 'Gemini CLI',
+      description: '通过 Streamable HTTP 连接 Gemini CLI。',
+      code: `gemini mcp add --transport http --header "Authorization: Bearer ${token}" kaka-cut ${endpoint}`,
+    },
+    {
+      id: 'cursor',
       label: 'Cursor (~/.cursor/mcp.json)',
+      description: '复制配置到 Cursor 的 MCP 文件。',
       code: JSON.stringify({
         mcpServers: {
           'kaka-cut': {
@@ -48,6 +62,31 @@ function snippets(endpoint: string, token: string): Snippet[] {
       }, null, 2),
     },
   ];
+}
+
+function DownloadButton({ text, fileName }: { text: string; fileName: string }) {
+  const t = useT();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const url = URL.createObjectURL(new Blob([`${text}\n`], { type: 'application/json' }));
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      }}
+      style={{
+        flex: '0 0 auto', display: 'inline-flex', alignItems: 'center', gap: 4,
+        padding: '3px 8px', border: `0.5px solid ${theme.border}`, borderRadius: 4,
+        background: theme.hover, color: theme.textMuted, fontSize: 11, cursor: 'pointer',
+      }}
+    >
+      <Icon name="download" size={11} />
+      {t('下载配置')}
+    </button>
+  );
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -94,6 +133,9 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
     fontFamily: 'Geist Mono, ui-monospace, SFMono-Regular, Menlo, monospace',
     whiteSpace: 'pre-wrap', wordBreak: 'break-all', userSelect: 'text',
   };
+  const allSnippets = mcpToken ? snippets(endpoint, mcpToken) : [];
+  const primarySnippets = allSnippets.filter((snippet) => snippet.id === 'codex' || snippet.id === 'antigravity');
+  const otherSnippets = allSnippets.filter((snippet) => snippet.id !== 'codex' && snippet.id !== 'antigravity');
   return (
     <div className="cc-modal-backdrop" onPointerDown={onClose}>
       <div
@@ -113,6 +155,41 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
         <div style={{ color: theme.textMuted, fontSize: 12, lineHeight: 1.55, padding: '8px 10px', borderRadius: 6, background: theme.hover }}>
           {t('连接后可直接下达自然语言命令，例如：“根据 C2 次字幕轨创建动态文字”或“把 V1 所有剪切点改成柔和叠化”。Kaka Cut 必须保持打开；执行修改前仍会遵守 Agent 的审核模式。')}
         </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+          <Icon name="sparkles" size={13} />
+          <span style={{ fontSize: 12, fontWeight: 650 }}>{t('主要连接器')}</span>
+          <span style={{ marginLeft: 'auto', color: theme.textDim, fontSize: 11 }}>{t('本机安全连接')}</span>
+        </div>
+
+        {mcpToken ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+            {primarySnippets.map((snippet) => (
+              <div key={snippet.id} style={{
+                minWidth: 0, display: 'flex', flexDirection: 'column', gap: 7, padding: 10,
+                borderRadius: 8, border: `0.5px solid ${theme.borderLight}`, background: theme.inset,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <Icon name={snippet.id === 'codex' ? 'plug' : 'sparkles'} size={14} />
+                  <strong style={{ fontSize: 12.5 }}>{snippet.label}</strong>
+                  <span style={{ marginLeft: 'auto', color: theme.accent, fontSize: 10.5 }}>{t('准备连接')}</span>
+                </div>
+                <div style={{ color: theme.textMuted, fontSize: 11.5, lineHeight: 1.45, minHeight: 50 }}>
+                  {t(snippet.description)}
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <CopyButton text={snippet.code} />
+                  {snippet.fileName && <DownloadButton text={snippet.code} fileName={snippet.fileName} />}
+                </div>
+                <pre style={{ ...codeStyle, maxHeight: 126, overflow: 'auto', fontSize: 10.5 }}>{snippet.code}</pre>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ color: tokenError ? theme.danger : theme.textMuted, fontSize: 12 }}>
+            {tokenError ? t('无法读取 MCP 连接令牌，请从受信任的编辑器窗口重试。') : t('正在读取 MCP 连接令牌…')}
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span style={{ fontSize: 12, fontWeight: 600 }}>{t('内置 Agent 与外部 MCP')}</span>
@@ -136,7 +213,11 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
           <pre style={codeStyle}>{endpoint}</pre>
         </div>
 
-        {mcpToken ? snippets(endpoint, mcpToken).map((snippet) => (
+        {otherSnippets.length > 0 && (
+          <span style={{ fontSize: 12, fontWeight: 600 }}>{t('其他兼容连接器')}</span>
+        )}
+
+        {otherSnippets.map((snippet) => (
           <div key={snippet.label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-start' }}>
               <span style={{ fontSize: 12, fontWeight: 600 }}>{snippet.label}</span>
@@ -144,11 +225,7 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
             </div>
             <pre style={codeStyle}>{snippet.code}</pre>
           </div>
-        )) : (
-          <div style={{ color: tokenError ? theme.danger : theme.textMuted, fontSize: 12 }}>
-            {tokenError ? t('无法读取 MCP 连接令牌，请从受信任的编辑器窗口重试。') : t('正在读取 MCP 连接令牌…')}
-          </div>
-        )}
+        ))}
 
         <div style={{ color: theme.textDim, fontSize: 11.5, lineHeight: 1.55, borderTop: `0.5px solid ${theme.borderLight}`, paddingTop: 8 }}>
           {t('MCP 端点始终要求 Bearer 令牌。令牌在首次启动时生成并保存在本机，重启后保持不变，配置一次即可持续使用；OPENCHATCUT_MCP_TOKEN 环境变量可覆盖。令牌只在当前受信任编辑器会话中显示，不写入工程、聊天或浏览器存储。')}
