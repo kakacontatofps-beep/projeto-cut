@@ -24,7 +24,7 @@ import { appendDroppedManualCaption } from '../captions/manualCaptions';
 import { Icon } from './icons';
 import { useT } from '../i18n/locale';
 import { ReviewCommentsButton, type ReviewOpenRequest } from '../review/ReviewCommentsButton';
-import { usePreviewProjectDoc } from '../media/previewMedia';
+import { requestPreviewWindow, usePreviewProjectDoc } from '../media/previewMedia';
 import {
   getPreviewSourceMode,
   setPreviewSourceMode,
@@ -155,6 +155,7 @@ export const PreviewPanel = memo(function PreviewPanel({
   const stageRef = useRef<HTMLDivElement>(null);
   const [stageSize, setStageSize] = useState<PreviewCanvasSize>({ width: 0, height: 0 });
   const [busy, setBusy] = useState(false);
+  const [buffering, setBuffering] = useState(false);
   const [showSafe, setShowSafe] = useState(false);
   const [autoEditCaption, setAutoEditCaption] = useState<{ trackId: TrackId; laneId: string } | null>(null);
   // Expose Player during full screen preview (` shortcut key/timeline toolbar button to make Player full screen)
@@ -241,6 +242,41 @@ export const PreviewPanel = memo(function PreviewPanel({
     player.addEventListener('fullscreenchange', onChange);
     return () => player.removeEventListener('fullscreenchange', onChange);
   }, [playerRef, hasItems]);
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player) return undefined;
+    let lastWarmFrame = Number.NEGATIVE_INFINITY;
+    const warm = (frame: number, force = false) => {
+      const interval = Math.max(1, Math.round(preview.state.fps / 2));
+      if (!force && Math.abs(frame - lastWarmFrame) < interval) return;
+      lastWarmFrame = frame;
+      requestPreviewWindow(preview.state, frame);
+    };
+    const onFrame: CallbackListener<'frameupdate'> = (event) => warm(event.detail.frame);
+    const onSeeked: CallbackListener<'seeked'> = (event) => warm(event.detail.frame, true);
+    const onPlay: CallbackListener<'play'> = () => warm(player.getCurrentFrame(), true);
+    const onWaiting: CallbackListener<'waiting'> = () => setBuffering(true);
+    const onResume: CallbackListener<'resume'> = () => setBuffering(false);
+    const onPause: CallbackListener<'pause'> = () => setBuffering(false);
+    const onEnded: CallbackListener<'ended'> = () => setBuffering(false);
+    player.addEventListener('frameupdate', onFrame);
+    player.addEventListener('seeked', onSeeked);
+    player.addEventListener('play', onPlay);
+    player.addEventListener('waiting', onWaiting);
+    player.addEventListener('resume', onResume);
+    player.addEventListener('pause', onPause);
+    player.addEventListener('ended', onEnded);
+    warm(player.getCurrentFrame(), true);
+    return () => {
+      player.removeEventListener('frameupdate', onFrame);
+      player.removeEventListener('seeked', onSeeked);
+      player.removeEventListener('play', onPlay);
+      player.removeEventListener('waiting', onWaiting);
+      player.removeEventListener('resume', onResume);
+      player.removeEventListener('pause', onPause);
+      player.removeEventListener('ended', onEnded);
+    };
+  }, [playerRef, preview.state]);
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage || typeof ResizeObserver === 'undefined') return undefined;
@@ -361,7 +397,7 @@ export const PreviewPanel = memo(function PreviewPanel({
               const urls = [src, proxy.status === 'ready' ? proxy.previewSrc : ''].filter(Boolean);
               return urls.some((url) => new URL(url, window.location.href).href === failedUrl);
             });
-            if (source) preview.requestFallback(source.src);
+            if (source) preview.requestFallback(source.src, failedUrl);
           }}>
             <Player
               ref={playerRef}
@@ -372,6 +408,7 @@ export const PreviewPanel = memo(function PreviewPanel({
               compositionWidth={state.width}
               compositionHeight={state.height}
               numberOfSharedAudioTags={PREVIEW_SHARED_AUDIO_TAGS}
+              bufferStateDelayInMilliseconds={100}
               // Full screen black: WebKit legacy full screen div does not automatically blacken the background, and the page checkerboard will be revealed on both sides.
               style={{ width: '100%', height: '100%', backgroundColor: fullscreen ? '#000' : undefined }}
               controls={fullscreen}
@@ -385,6 +422,17 @@ export const PreviewPanel = memo(function PreviewPanel({
               // No loop: playback stops at the final frame (editor convention).
               // Restart by pressing play again.
             />
+            {buffering && (
+              <div role="status" aria-live="polite" style={{
+                position: 'absolute', inset: 0, zIndex: 11, display: 'grid', placeItems: 'center',
+                pointerEvents: 'none', color: theme.text, fontSize: 11,
+                background: themeAlpha.shadow(0.16),
+              }}>
+                <span style={{ padding: '6px 10px', borderRadius: 6, background: themeAlpha.shadow(0.8) }}>
+                  {t('正在准备流畅预览…')}
+                </span>
+              </div>
+            )}
             {!fullscreen && settledHoverPreviewFrame !== null && (
               <div className="cc-preview-hover-frame" aria-label={t('时间线悬停预览')}>
                 <Thumbnail

@@ -5,7 +5,7 @@ import {
   type AudioProps as BrowserAudioProps,
   type VideoProps as BrowserVideoProps,
 } from '@remotion/media';
-import { AbsoluteFill, Audio as ServerAudio, Img, Sequence, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, Audio as ServerAudio, Img, Sequence, Video as ServerVideo, useCurrentFrame } from 'remotion';
 import { ClipFx } from '../gl/ClipFx';
 import { firstGlEffect } from '../gl/clipEffects';
 import { selectEffectPreviewAdapter, type SelectedPreviewStatusListener } from '../gl/previewAdapter';
@@ -28,14 +28,16 @@ type RuntimeVideoProps = Pick<BrowserVideoProps, 'src' | 'trimBefore' | 'trimAft
 
 function RuntimeAudio({ browserRenderer, ...props }: BrowserAudioProps & { browserRenderer: boolean }) {
   return browserRenderer
-    ? <BrowserAudio {...props} />
-    : <ServerAudio {...props} preservePitch />;
+    ? <BrowserAudio {...props} fallbackHtml5AudioProps={{ pauseWhenBuffering: true, preservePitch: true }} />
+    : <ServerAudio {...props} preservePitch pauseWhenBuffering />;
 }
 
 function RuntimeVideo({ browserRenderer, style, ...props }: RuntimeVideoProps) {
-  void browserRenderer;
   const { objectFit, ...browserStyle } = style ?? {};
-  return <BrowserVideo {...props} style={browserStyle} objectFit={objectFit as BrowserVideoProps['objectFit']} />;
+  return browserRenderer
+    ? <BrowserVideo {...props} style={browserStyle} objectFit={objectFit as BrowserVideoProps['objectFit']}
+        fallbackOffthreadVideoProps={{ pauseWhenBuffering: true, preservePitch: true }} />
+    : <ServerVideo {...props} style={style} preservePitch pauseWhenBuffering />;
 }
 
 function MixedRuntimeAudio({ item, browserRenderer, volume, ...props }: Omit<BrowserAudioProps, 'src'> & {

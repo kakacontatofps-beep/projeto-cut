@@ -39,6 +39,7 @@ interface ProxyEntry {
   controller: AbortController | null;
   listeners: Set<() => void>;
   force: boolean;
+  fallbackToProxy: boolean;
 }
 
 const proxyEntries = new Map<string, ProxyEntry>();
@@ -46,7 +47,14 @@ const proxyEntries = new Map<string, ProxyEntry>();
 function proxyEntry(src: string): ProxyEntry {
   let entry = proxyEntries.get(src);
   if (!entry) {
-    entry = { response: null, promise: null, controller: null, listeners: new Set(), force: false };
+    entry = {
+      response: null,
+      promise: null,
+      controller: null,
+      listeners: new Set(),
+      force: false,
+      fallbackToProxy: false,
+    };
     proxyEntries.set(src, entry);
   }
   return entry;
@@ -106,18 +114,37 @@ export function requestPreviewProxy(src: string, force = false): Promise<void> {
   return loadProxy(src, force, proxyEntry(src));
 }
 
-export function reportPreviewPlaybackFailure(src: string, error = 'preview media failed to play'): void {
+function sameMediaUrl(left: string, right: string): boolean {
+  const base = typeof window !== 'undefined' ? window.location.href : 'http://localhost/';
+  try {
+    return new URL(left, base).href === new URL(right, base).href;
+  } catch {
+    return left === right;
+  }
+}
+
+export function reportPreviewPlaybackFailure(
+  src: string,
+  error = 'preview media failed to play',
+  failedSrc?: string,
+): void {
   if (!isPreviewable(src)) return;
   const entry = proxyEntry(src);
-  if (entry.response?.proxy.status !== 'ready') {
-    if (entry.response?.proxy.status !== 'failed') void requestPreviewProxy(src, true);
+  const readyProxy = entry.response?.proxy.status === 'ready' ? entry.response.proxy : null;
+  if (readyProxy && failedSrc && sameMediaUrl(failedSrc, readyProxy.previewSrc)) {
+    entry.fallbackToProxy = false;
+    entry.response = {
+      ...entry.response!,
+      proxy: { status: 'failed', reason: 'proxy-playback-failed', error },
+    };
+    notify(entry);
     return;
   }
-  entry.response = {
-    ...entry.response,
-    proxy: { status: 'failed', reason: 'proxy-playback-failed', error },
-  };
+  // The master failed. Keep the intent even while FFmpeg is preparing the
+  // replacement so a ready proxy actually becomes the selected source.
+  entry.fallbackToProxy = true;
   notify(entry);
+  if (!readyProxy) void requestPreviewProxy(src, true);
 }
 
 export function mediaPosterUrl(src: string | undefined): string | undefined {
@@ -128,6 +155,7 @@ function stateFor(src: string | undefined, autoRequest: boolean): PreviewProxySt
   if (!isPreviewable(src)) return { status: 'unavailable', reason: 'non-local-source' };
   const entry = proxyEntry(src);
   if (!entry.response) {
+    if (entry.promise) return { status: 'loading', reason: 'preparing-playback-window' };
     return autoRequest
       ? { status: 'loading', reason: 'checking-source' }
       : { status: 'not-needed', reason: 'preview-source-original' };
@@ -178,8 +206,60 @@ function useProxySources(sources: readonly string[], eager = true): number {
 }
 
 function resolvePreviewSrc(src: string | undefined, proxy: PreviewProxyState): string | undefined {
-  if (shouldPreferMasterPreview() && src) return src;
-  return proxy.status === 'ready' ? proxy.previewSrc : src;
+  if (!src || proxy.status !== 'ready') return src;
+  const fallbackToProxy = isPreviewable(src) && proxyEntry(src).fallbackToProxy;
+  return fallbackToProxy || !shouldPreferMasterPreview() ? proxy.previewSrc : src;
+}
+
+const PREVIEW_WINDOW_MAX_SOURCES = 2;
+
+/** Sources that need to be ready now: the active clip and at most one successor. */
+export function previewWindowSources(
+  state: TimelineState,
+  frame: number,
+  lookAheadFrames = Math.max(1, Math.round(state.fps * 6)),
+  maxSources = PREVIEW_WINDOW_MAX_SOURCES,
+): string[] {
+  const from = Math.max(0, Math.floor(frame));
+  const to = from + Math.max(1, Math.floor(lookAheadFrames));
+  const candidates = state.items
+    .filter((item) => item.kind === 'video' && isPreviewable(item.src))
+    .filter((item) => !state.tracks?.[item.track]?.hidden)
+    .filter((item) => item.startFrame + item.durationInFrames > from && item.startFrame < to)
+    .sort((left, right) => {
+      const leftActive = left.startFrame <= from && left.startFrame + left.durationInFrames > from;
+      const rightActive = right.startFrame <= from && right.startFrame + right.durationInFrames > from;
+      return Number(rightActive) - Number(leftActive) || left.startFrame - right.startFrame;
+    });
+  const sources: string[] = [];
+  for (const item of candidates) {
+    const src = item.src!;
+    if (sources.includes(src)) continue;
+    sources.push(src);
+    if (sources.length >= Math.max(1, maxSources)) break;
+  }
+  return sources;
+}
+
+/** Probe/build only the tiny playback window, with a hard client-side in-flight cap. */
+export function requestPreviewWindow(state: TimelineState, frame: number): string[] {
+  const sources = previewWindowSources(state, frame);
+  // Auto/original preview takes the native Chromium path first. Starting a
+  // proxy probe here changes the Player input tree when the probe completes,
+  // which can remount long-running audio/video tags mid-playback. Explicit
+  // proxy mode still warms only this bounded window; automatic mode falls
+  // back through reportPreviewPlaybackFailure() if native playback fails.
+  if (!shouldAutoRequestPreviewProxy()) return sources;
+  let available = Math.max(0, PREVIEW_WINDOW_MAX_SOURCES
+    - [...proxyEntries.values()].filter((entry) => entry.promise).length);
+  for (const src of sources) {
+    if (available <= 0) break;
+    const entry = proxyEntry(src);
+    if (entry.promise || entry.response) continue;
+    available -= 1;
+    void requestPreviewProxy(src);
+  }
+  return sources;
 }
 
 export function usePreviewMediaSource(src: string | undefined, enabled = true) {
@@ -194,8 +274,8 @@ export function usePreviewMediaSource(src: string | undefined, enabled = true) {
     posterSrc: mediaPosterUrl(source || undefined),
     proxy,
     requestFallback: useCallback(() => {
-      if (source) reportPreviewPlaybackFailure(source);
-    }, [source]),
+      if (source) reportPreviewPlaybackFailure(source, undefined, previewSrc);
+    }, [source, previewSrc]),
     revision,
   };
 }
@@ -224,7 +304,9 @@ export function usePreviewTimelineState(state: TimelineState) {
   return {
     state: previewState,
     proxies,
-    requestFallback: (src: string) => { reportPreviewPlaybackFailure(src); },
+    requestFallback: (src: string, failedSrc?: string) => {
+      reportPreviewPlaybackFailure(src, undefined, failedSrc);
+    },
   };
 }
 
@@ -259,6 +341,8 @@ export function usePreviewProjectDoc(project: ProjectDoc, timelineId: string) {
     state,
     plan,
     proxies: sources.map((src) => ({ src, proxy: stateFor(src, false) })),
-    requestFallback: (src: string) => { reportPreviewPlaybackFailure(src); },
+    requestFallback: (src: string, failedSrc?: string) => {
+      reportPreviewPlaybackFailure(src, undefined, failedSrc);
+    },
   };
 }

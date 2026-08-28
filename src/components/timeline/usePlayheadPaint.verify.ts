@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   audioMediaTimeToTimelineFrame,
+  isContinuousAudioClockFrame,
   type AudibleAudioItem,
 } from './usePlayheadPaint';
 
@@ -17,6 +18,8 @@ const base: AudibleAudioItem = { startFrame: 0, playbackRate: 1, srcInFrame: 0, 
 assert.equal(audioMediaTimeToTimelineFrame(1.0, base, 30), 30);
 assert.equal(Math.round(audioMediaTimeToTimelineFrame(11 / 30, base, 30)), 11);
 assert.equal(audioMediaTimeToTimelineFrame(0, base, 30), 0);
+assert.equal(isContinuousAudioClockFrame(41_520, 140, 30), false, 'remounted audio clock must not reset a late playhead');
+assert.equal(isContinuousAudioClockFrame(41_520, 41_550, 30), true, 'normal audio-clock drift remains accepted');
 
 // Item starting mid-timeline: the playhead offset shifts with the item start.
 assert.equal(audioMediaTimeToTimelineFrame(1.0, { ...base, startFrame: 820 }, 30), 850);

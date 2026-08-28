@@ -44,9 +44,9 @@ function readPreviewSourceInitial(): PreviewSourceMode {
     const raw = localStorage.getItem(PREVIEW_SOURCE_KEY);
     if (raw === 'auto' || raw === 'original' || raw === 'proxy') return raw;
   } catch { /* private mode */ }
-  // Keep project opening/import instant. Proxies remain available as an
-  // explicit choice or as a fallback after the original fails to play.
-  return 'original';
+  // Adaptive preview: try the original immediately and only use a prepared
+  // proxy for the small playback window around the playhead.
+  return 'auto';
 }
 
 function emit(): void {
@@ -100,6 +100,9 @@ export function qualityPolicy(mode: QualityMode = current): QualityPolicy {
     mode: 'balanced',
     allowOptimizeOnIngest: false,
     normalizeOnlyForCompatibility: true,
+    // Chromium can decode ordinary H.264 media through the GPU. Keep that
+    // direct path stable; the proxy is a compatibility fallback, not a
+    // background transcode that remounts the Player while it is running.
     previewPreferMaster: true,
     allowPreviewProxyFallback: true,
     defaultExportResolution: 'source',

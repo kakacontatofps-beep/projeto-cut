@@ -49,6 +49,20 @@ export function audioMediaTimeToTimelineFrame(
   return item.startFrame + (sourceFrame - item.srcInFrame) / item.playbackRate;
 }
 
+/**
+ * Reject the short-lived 0-second clock exposed while a media element is
+ * remounting or seeking. Without this guard a 30-minute playhead can be pulled
+ * back to the beginning before Chromium finishes restoring media.currentTime.
+ */
+export function isContinuousAudioClockFrame(
+  currentFrame: number,
+  candidateFrame: number,
+  fps: number,
+): boolean {
+  const tolerance = Math.max(2, Math.round(Math.max(1, fps) * 2));
+  return Number.isFinite(candidateFrame) && Math.abs(candidateFrame - currentFrame) <= tolerance;
+}
+
 // Constant WebAudio output latency shifts what you HEAR vs element.currentTime.
 // Measure once (lazily) and subtract, so markers land on the audible beat
 // instead of a few frames early. Falls back to 0 when the platform does not
@@ -301,6 +315,11 @@ export function usePlayheadPaint({ playerRef, projectId, timelineId, fps, total,
         const mediaSec = Math.max(0, el.currentTime - latency);
         const raw = audioMediaTimeToTimelineFrame(mediaSec, item, fpsRef.current);
         const clamped = Math.max(0, Math.min(Math.max(0, totalRef.current - 1), Math.round(raw)));
+        if (!isContinuousAudioClockFrame(playheadRef.current, clamped, fpsRef.current)) {
+          lastAudioFrameRef.current = null;
+          raf = requestAnimationFrame(loop);
+          return;
+        }
         lastAudioFrameRef.current = clamped;
         paintPlayheadRef.current(clamped);
         const now = performance.now();
